@@ -1,24 +1,35 @@
 # Commlink Caller
 
-Commlink Caller is a lightweight Foundry VTT community module for cyberpunk comm-link call prompts.
+Commlink Caller is a lightweight Foundry VTT v13/v14 community module for GM-run commlink calls.
 
-This first version only proves the module loads: when a GM opens a world with the module enabled, it displays a Handlebars-based welcome screen.
+GMs configure world-level contacts with a name, handle, portrait, ringtone, and message. From the contact manager, the GM can place a one-click call that shows an incoming call prompt to connected players and plays the contact ringtone when browser audio is unlocked.
 
 ## Install
 
-Use this manifest URL once the repository has a release:
+Install the module in Foundry with this manifest URL:
 
 ```text
 https://raw.githubusercontent.com/ArcaneFoundry/foundry-commlink-caller/main/module.json
 ```
 
-For local development, copy or symlink this folder into Foundry's `Data/modules` directory, then enable **Commlink Caller** in your world.
+For local development, copy or symlink this repository folder into Foundry's `Data/modules` directory as `foundry-commlink-caller`, then enable **Commlink Caller** in your world.
 
-## Roadmap
+## Use
 
-- GM-facing contact buttons.
-- Per-contact name, portrait, and ringtone fields.
-- One-click call action that plays the ringtone and shows the caller to players.
+1. As the GM, open **Configure Settings** for the world and confirm **Commlink Caller** is enabled.
+2. Open the Contact Manager from **Commlink contacts**.
+3. Add or edit contacts, then save each contact's name, handle, portrait, ringtone, and message.
+4. Click **Call** on a saved contact to send an incoming call prompt to connected players.
+
+## Verify
+
+Run the automated tests:
+
+```bash
+npm test
+```
+
+For a Foundry smoke test, start a v13 or v14 world with one GM session and at least one connected player session. As the GM, save a contact, click **Call**, and confirm the player sees the incoming call prompt with the configured contact details. Ringtones depend on browser audio unlock policy, so players may need to interact with the Foundry page once before ringtone playback is allowed.
 
 ## License
 
