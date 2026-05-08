@@ -1,9 +1,11 @@
 const MODULE_ID = "foundry-commlink-caller";
 const CONTACTS_SETTING = "contacts";
+const WELCOME_DISMISSED_SETTING = "welcomeDismissed";
 const SOCKET_NAME = `module.${MODULE_ID}`;
 const TEMPLATES = Object.freeze({
   manager: `modules/${MODULE_ID}/templates/contact-manager.hbs`,
-  incomingCall: `modules/${MODULE_ID}/templates/incoming-call.hbs`
+  incomingCall: `modules/${MODULE_ID}/templates/incoming-call.hbs`,
+  welcome: `modules/${MODULE_ID}/templates/welcome.hbs`
 });
 const NEW_CONTACT_ID = "__new__";
 const {
@@ -15,6 +17,7 @@ const {
 globalThis.CommlinkCaller = globalThis.CommlinkCaller || {};
 globalThis.CommlinkCaller.MODULE_ID = MODULE_ID;
 globalThis.CommlinkCaller.CONTACTS_SETTING = CONTACTS_SETTING;
+globalThis.CommlinkCaller.WELCOME_DISMISSED_SETTING = WELCOME_DISMISSED_SETTING;
 globalThis.CommlinkCaller.SOCKET_NAME = SOCKET_NAME;
 globalThis.CommlinkCaller.TEMPLATES = TEMPLATES;
 globalThis.CommlinkCaller.ApplicationV2 = ApplicationV2;
@@ -70,6 +73,25 @@ function openContactManager() {
   manager.bringToFront?.();
 
   return manager;
+}
+
+function getWelcomeScreen() {
+  return foundry.applications.instances.get(WelcomeScreen.DEFAULT_OPTIONS.id);
+}
+
+function shouldShowWelcome() {
+  return Boolean(game.user?.isGM) && !game.settings.get(MODULE_ID, WELCOME_DISMISSED_SETTING);
+}
+
+function openWelcomeScreen({ force = false } = {}) {
+  if (!game.user?.isGM) return null;
+  if (!force && !shouldShowWelcome()) return null;
+
+  const welcome = getWelcomeScreen() || new WelcomeScreen();
+  welcome.render({ force: true });
+  welcome.bringToFront?.();
+
+  return welcome;
 }
 
 async function placeCall(contactId) {
@@ -138,6 +160,97 @@ async function showIncomingCall(contact) {
   await dialog.render({ force: true });
 
   return dialog;
+}
+
+class WelcomeScreen extends HandlebarsApplicationMixin(ApplicationV2) {
+  static DEFAULT_OPTIONS = {
+    id: "commlink-caller-welcome",
+    classes: ["commlink-caller-welcome"],
+    window: {
+      title: "Commlink Caller",
+      resizable: false
+    },
+    position: {
+      width: 520
+    }
+  };
+
+  static PARTS = {
+    welcome: {
+      template: TEMPLATES.welcome
+    }
+  };
+
+  constructor(options = {}) {
+    super(options);
+
+    this._hideOnNextLogin = true;
+    this._preferenceSaved = false;
+  }
+
+  async _prepareContext() {
+    return {
+      hideWelcome: this._hideOnNextLogin
+    };
+  }
+
+  _onRender(context, options) {
+    super._onRender?.(context, options);
+
+    const element = this.element;
+    if (!element) return;
+
+    const checkbox = element.querySelector("[name='hideWelcome']");
+    if (checkbox instanceof HTMLInputElement) {
+      this._hideOnNextLogin = checkbox.checked;
+      checkbox.addEventListener("change", () => {
+        this._hideOnNextLogin = checkbox.checked;
+        this._preferenceSaved = false;
+      });
+    }
+
+    element.querySelector("[data-welcome-form]")?.addEventListener("submit", this._submitWelcome.bind(this));
+    element.querySelector("[data-action='open-contact-manager']")?.addEventListener("click", this._openContactManager.bind(this));
+  }
+
+  async close(options) {
+    await this._savePreference();
+
+    return super.close?.(options);
+  }
+
+  async _submitWelcome(event) {
+    event?.preventDefault();
+
+    this._setPreferenceFromForm(event?.currentTarget);
+
+    await this._savePreference();
+    await this.close();
+  }
+
+  async _openContactManager(event) {
+    event?.preventDefault();
+
+    this._setPreferenceFromForm(event?.currentTarget?.closest?.("[data-welcome-form]"));
+
+    await this._savePreference();
+    await this.close();
+    openContactManager();
+  }
+
+  _setPreferenceFromForm(form) {
+    if (!form) return;
+
+    this._hideOnNextLogin = new FormData(form).get("hideWelcome") === "on";
+    this._preferenceSaved = false;
+  }
+
+  async _savePreference() {
+    if (this._preferenceSaved || !game.user?.isGM) return;
+
+    await game.settings.set(MODULE_ID, WELCOME_DISMISSED_SETTING, this._hideOnNextLogin);
+    this._preferenceSaved = true;
+  }
 }
 
 class ContactManager extends HandlebarsApplicationMixin(ApplicationV2) {
@@ -305,10 +418,12 @@ class ContactManager extends HandlebarsApplicationMixin(ApplicationV2) {
 globalThis.CommlinkCaller.getContacts = getContacts;
 globalThis.CommlinkCaller.setContacts = setContacts;
 globalThis.CommlinkCaller.openContactManager = openContactManager;
+globalThis.CommlinkCaller.openWelcomeScreen = openWelcomeScreen;
 globalThis.CommlinkCaller.placeCall = placeCall;
 globalThis.CommlinkCaller.receiveSocketMessage = receiveSocketMessage;
 globalThis.CommlinkCaller.playRingtone = playRingtone;
 globalThis.CommlinkCaller.showIncomingCall = showIncomingCall;
+globalThis.CommlinkCaller.WelcomeScreen = WelcomeScreen;
 globalThis.CommlinkCaller.ContactManager = ContactManager;
 
 Hooks.once("init", () => {
@@ -319,6 +434,15 @@ Hooks.once("init", () => {
     config: false,
     type: Array,
     default: []
+  });
+
+  game.settings.register(MODULE_ID, WELCOME_DISMISSED_SETTING, {
+    name: "Hide welcome tutorial",
+    hint: "Whether this GM has dismissed the Commlink Caller welcome tutorial.",
+    scope: "user",
+    config: false,
+    type: Boolean,
+    default: false
   });
 
   game.settings.registerMenu(MODULE_ID, "contactManager", {
@@ -349,4 +473,5 @@ Hooks.on("getSceneControlButtons", (controls) => {
 
 Hooks.once("ready", () => {
   game.socket.on(SOCKET_NAME, globalThis.CommlinkCaller.receiveSocketMessage);
+  globalThis.CommlinkCaller.openWelcomeScreen();
 });

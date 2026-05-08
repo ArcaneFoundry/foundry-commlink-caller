@@ -145,6 +145,60 @@
   color: var(--color-text-dark-secondary, #4b4a44);
 }
 
+.commlink-caller-welcome .window-content {
+  padding: 0.85rem;
+}
+
+.commlink-caller-welcome__form,
+.commlink-caller-welcome__intro,
+.commlink-caller-welcome__steps {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.commlink-caller-welcome__intro {
+  padding-bottom: 0.15rem;
+}
+
+.commlink-caller-welcome__eyebrow,
+.commlink-caller-welcome__intro h2,
+.commlink-caller-welcome__intro p {
+  margin: 0;
+}
+
+.commlink-caller-welcome__eyebrow {
+  color: #0b8076;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.commlink-caller-welcome__intro h2 {
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+
+.commlink-caller-welcome__steps {
+  margin: 0;
+  padding-left: 1.35rem;
+}
+
+.commlink-caller-welcome__preference,
+.commlink-caller-welcome__actions {
+  display: flex;
+  align-items: center;
+}
+
+.commlink-caller-welcome__preference {
+  gap: 0.45rem;
+}
+
+.commlink-caller-welcome__actions {
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
 .commlink-caller-incoming {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);

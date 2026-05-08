@@ -54,6 +54,7 @@ test("module bootstrap registers hidden world contacts setting and GM menu durin
       on: (...args) => socketHandlers.push(args)
     },
     settings: {
+      get: () => true,
       register: (...args) => registeredSettings.push(args),
       registerMenu: (...args) => registeredMenus.push(args)
     }
@@ -73,18 +74,32 @@ test("module bootstrap registers hidden world contacts setting and GM menu durin
 
   registeredHooks.get("init")();
 
-  assert.deepEqual(registeredSettings, [[
-    "foundry-commlink-caller",
-    "contacts",
-    {
-      name: "Commlink contacts",
-      hint: "Stored contacts available to GMs for commlink calls.",
-      scope: "world",
-      config: false,
-      type: Array,
-      default: []
-    }
-  ]]);
+  assert.deepEqual(registeredSettings, [
+    [
+      "foundry-commlink-caller",
+      "contacts",
+      {
+        name: "Commlink contacts",
+        hint: "Stored contacts available to GMs for commlink calls.",
+        scope: "world",
+        config: false,
+        type: Array,
+        default: []
+      }
+    ],
+    [
+      "foundry-commlink-caller",
+      "welcomeDismissed",
+      {
+        name: "Hide welcome tutorial",
+        hint: "Whether this GM has dismissed the Commlink Caller welcome tutorial.",
+        scope: "user",
+        config: false,
+        type: Boolean,
+        default: false
+      }
+    ]
+  ]);
   assert.equal(registeredMenus.length, 1);
   assert.equal(registeredMenus[0][0], "foundry-commlink-caller");
   assert.equal(registeredMenus[0][1], "contactManager");
@@ -92,6 +107,7 @@ test("module bootstrap registers hidden world contacts setting and GM menu durin
   assert.equal(registeredMenus[0][2].restricted, true);
   assert.equal(registeredMenus[0][2].type, globalThis.CommlinkCaller.ContactManager);
   assert.equal(globalThis.CommlinkCaller.TEMPLATES.manager, "modules/foundry-commlink-caller/templates/contact-manager.hbs");
+  assert.equal(globalThis.CommlinkCaller.TEMPLATES.welcome, "modules/foundry-commlink-caller/templates/welcome.hbs");
   assert.equal(globalThis.CommlinkCaller.ContactManager.DEFAULT_OPTIONS.id, "commlink-caller-contact-manager");
   assert.deepEqual(globalThis.CommlinkCaller.ContactManager.PARTS, {
     manager: {
@@ -268,6 +284,94 @@ test("openContactManager is GM-only and reuses the existing window", async () =>
   assert.equal(reusedManager, existingManager);
   assert.equal(existingManager.renderCount, 1);
   assert.deepEqual(existingManager.renderOptions, { force: true });
+});
+
+test("welcome screen opens only for GMs who have not dismissed it", async () => {
+  const savedSettings = [];
+  const originalFormData = globalThis.FormData;
+  const existingWelcome = new globalThis.CommlinkCaller.WelcomeScreen();
+
+  globalThis.FormData = class TestFormData {
+    constructor(form) {
+      this.form = form;
+    }
+
+    get(fieldName) {
+      return this.form[fieldName] || "";
+    }
+  };
+  globalThis.foundry.applications.instances = new Map();
+  globalThis.game = {
+    user: { isGM: false },
+    settings: {
+      get: () => false,
+      set: async (...args) => savedSettings.push(args)
+    }
+  };
+
+  try {
+    assert.equal(globalThis.CommlinkCaller.openWelcomeScreen(), null);
+
+    globalThis.game.user.isGM = true;
+    globalThis.game.settings.get = () => true;
+
+    assert.equal(globalThis.CommlinkCaller.openWelcomeScreen(), null);
+
+    globalThis.game.settings.get = () => false;
+
+    const newWelcome = globalThis.CommlinkCaller.openWelcomeScreen();
+
+    assert.ok(newWelcome instanceof globalThis.CommlinkCaller.WelcomeScreen);
+    assert.equal(newWelcome.renderCount, 1);
+    assert.deepEqual(newWelcome.renderOptions, { force: true });
+
+    globalThis.foundry.applications.instances.set(
+      globalThis.CommlinkCaller.WelcomeScreen.DEFAULT_OPTIONS.id,
+      existingWelcome
+    );
+
+    const reusedWelcome = globalThis.CommlinkCaller.openWelcomeScreen();
+
+    assert.equal(reusedWelcome, existingWelcome);
+    assert.equal(existingWelcome.renderCount, 1);
+    assert.deepEqual(existingWelcome.renderOptions, { force: true });
+
+    await reusedWelcome._submitWelcome({
+      preventDefault: () => {},
+      currentTarget: { hideWelcome: "on" }
+    });
+
+    assert.deepEqual(savedSettings.at(-1), [
+      "foundry-commlink-caller",
+      "welcomeDismissed",
+      true
+    ]);
+
+    const showAgainWelcome = new globalThis.CommlinkCaller.WelcomeScreen();
+
+    await showAgainWelcome._submitWelcome({
+      preventDefault: () => {},
+      currentTarget: {}
+    });
+
+    assert.deepEqual(savedSettings.at(-1), [
+      "foundry-commlink-caller",
+      "welcomeDismissed",
+      false
+    ]);
+  } finally {
+    globalThis.FormData = originalFormData;
+  }
+});
+
+test("welcome template explains entry points and starts with checked preference", async () => {
+  const template = await readFile(new URL("../templates/welcome.hbs", import.meta.url), "utf8");
+
+  assert.equal(template.includes("scene-control satellite button"), true);
+  assert.equal(template.includes("CommlinkCaller.openContactManager"), false);
+  assert.equal(template.includes("name=\"hideWelcome\""), true);
+  assert.equal(template.includes("{{#if hideWelcome}}checked{{/if}}"), true);
+  assert.equal(template.includes("data-action=\"open-contact-manager\""), true);
 });
 
 test("contact manager template keeps ids internal and exposes FilePicker buttons", async () => {

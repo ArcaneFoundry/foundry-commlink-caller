@@ -21,6 +21,8 @@ For local development, copy or symlink this repository folder into Foundry's `Da
 3. Add or edit contacts, then save each contact's name, handle, portrait, ringtone, and message.
 4. Click **Call** on a saved contact to send an incoming call prompt to connected players.
 
+GMs see a short welcome tutorial the first time the module loads. Leave **Don't show this again on my next login** checked to dismiss it for future logins, or uncheck it before closing to see it again next time. Players never see this welcome screen.
+
 You can also open the Contact Manager from a macro:
 
 ```js
