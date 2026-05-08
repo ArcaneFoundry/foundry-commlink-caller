@@ -33,6 +33,8 @@ CommlinkCaller.openContactManager();
 
 Use the file picker buttons beside **Portrait** and **Ringtone** to choose image and audio paths from Foundry's file browser.
 
+The Ringtone preset menu includes bundled OGG sounds for fantasy or arcane games, gothic horror, western telegraph calls, 1950s switchboard flavor, modern alerts, cyberpunk commlinks, and far-future starship hails. The bundled sounds live in `assets/sounds/ringtones/` and are sourced from Kenney CC0 audio packs; see `assets/sounds/CREDITS.md`.
+
 ## Verify
 
 Run the automated tests:

@@ -8,6 +8,36 @@ const TEMPLATES = Object.freeze({
   incomingCall: `modules/${MODULE_ID}/templates/incoming-call.hbs`,
   welcome: `modules/${MODULE_ID}/templates/welcome.hbs`
 });
+const RINGTONE_PRESETS = Object.freeze([
+  {
+    label: "Fantasy / Arcane - Crystal chime",
+    path: `modules/${MODULE_ID}/assets/sounds/ringtones/fantasy-crystal-chime.ogg`
+  },
+  {
+    label: "Gothic / Horror - Omen",
+    path: `modules/${MODULE_ID}/assets/sounds/ringtones/gothic-omen.ogg`
+  },
+  {
+    label: "Western - Telegraph tick",
+    path: `modules/${MODULE_ID}/assets/sounds/ringtones/western-telegraph.ogg`
+  },
+  {
+    label: "1950s / Retro - Switchboard",
+    path: `modules/${MODULE_ID}/assets/sounds/ringtones/retro-1950s-switchboard.ogg`
+  },
+  {
+    label: "Modern - Alert",
+    path: `modules/${MODULE_ID}/assets/sounds/ringtones/modern-alert.ogg`
+  },
+  {
+    label: "Cyberpunk - Commlink",
+    path: `modules/${MODULE_ID}/assets/sounds/ringtones/cyberpunk-commlink.ogg`
+  },
+  {
+    label: "Far Future - Starship hail",
+    path: `modules/${MODULE_ID}/assets/sounds/ringtones/starship-hail.ogg`
+  }
+]);
 const NEW_CONTACT_ID = "__new__";
 const {
   ApplicationV2,
@@ -22,6 +52,7 @@ globalThis.CommlinkCaller.SHOW_WELCOME_SETTING = SHOW_WELCOME_SETTING;
 globalThis.CommlinkCaller.SHOW_SCENE_CONTROL_BUTTON_SETTING = SHOW_SCENE_CONTROL_BUTTON_SETTING;
 globalThis.CommlinkCaller.SOCKET_NAME = SOCKET_NAME;
 globalThis.CommlinkCaller.TEMPLATES = TEMPLATES;
+globalThis.CommlinkCaller.RINGTONE_PRESETS = RINGTONE_PRESETS;
 globalThis.CommlinkCaller.ApplicationV2 = ApplicationV2;
 globalThis.CommlinkCaller.DialogV2 = DialogV2;
 globalThis.CommlinkCaller.HandlebarsApplicationMixin = HandlebarsApplicationMixin;
@@ -52,6 +83,14 @@ function createEmptyContact() {
     message: "Incoming call",
     volume: 0.8
   };
+}
+
+function getRingtonePresetOptions(ringtone) {
+  return RINGTONE_PRESETS.map((preset) => ({
+    label: preset.label,
+    path: preset.path,
+    selected: preset.path === ringtone
+  }));
 }
 
 function getFormString(formData, fieldName) {
@@ -287,7 +326,8 @@ class ContactManager extends HandlebarsApplicationMixin(ApplicationV2) {
     return {
       contacts,
       editorContact,
-      isEditing: Boolean(editorContact)
+      isEditing: Boolean(editorContact),
+      ringtonePresets: getRingtonePresetOptions(editorContact?.ringtone || "")
     };
   }
 
@@ -315,6 +355,9 @@ class ContactManager extends HandlebarsApplicationMixin(ApplicationV2) {
     });
     element.querySelectorAll("[data-action='browse-file']").forEach((button) => {
       button.addEventListener("click", this._browseFile.bind(this));
+    });
+    element.querySelectorAll("[data-action='apply-ringtone-preset']").forEach((select) => {
+      select.addEventListener("change", this._applyRingtonePreset.bind(this));
     });
   }
 
@@ -374,6 +417,16 @@ class ContactManager extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!(button instanceof HTMLButtonElement)) return;
 
     foundry.applications.apps.FilePicker.fromButton(button).render({ force: true });
+  }
+
+  _applyRingtonePreset(event) {
+    const select = event?.currentTarget;
+    const form = select?.closest?.("[data-contact-form]");
+    const ringtoneInput = form?.querySelector?.("[name='ringtone']");
+
+    if (!ringtoneInput) return;
+
+    ringtoneInput.value = select?.value || "";
   }
 
   async _saveContact(event) {

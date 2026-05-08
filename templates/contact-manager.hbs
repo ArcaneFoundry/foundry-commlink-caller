@@ -71,6 +71,12 @@
 
           <label>
             <span>Ringtone</span>
+            <select name="ringtonePreset" data-action="apply-ringtone-preset">
+              <option value="">Custom path</option>
+              {{#each ringtonePresets}}
+                <option value="{{path}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+              {{/each}}
+            </select>
             <div class="commlink-caller-editor__file-field">
               <input type="text" name="ringtone" value="{{editorContact.ringtone}}" autocomplete="off">
               <button type="button" data-action="browse-file" data-target="ringtone" data-type="audio" aria-label="Browse ringtone">

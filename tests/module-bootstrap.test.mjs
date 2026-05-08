@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import { test } from "node:test";
 
 import "../scripts/contact-model.js";
@@ -121,6 +121,7 @@ test("module bootstrap registers settings and GM menu during init", async () => 
   assert.equal(registeredMenus[0][2].type, globalThis.CommlinkCaller.ContactManager);
   assert.equal(globalThis.CommlinkCaller.TEMPLATES.manager, "modules/foundry-commlink-caller/templates/contact-manager.hbs");
   assert.equal(globalThis.CommlinkCaller.TEMPLATES.welcome, "modules/foundry-commlink-caller/templates/welcome.hbs");
+  assert.equal(globalThis.CommlinkCaller.RINGTONE_PRESETS.length, 7);
   assert.equal(globalThis.CommlinkCaller.ContactManager.DEFAULT_OPTIONS.id, "commlink-caller-contact-manager");
   assert.deepEqual(globalThis.CommlinkCaller.ContactManager.PARTS, {
     manager: {
@@ -218,6 +219,12 @@ test("contact helpers read and persist normalized contacts through Foundry setti
 });
 
 test("contact manager context renders normalized contacts and selected editor contact", async () => {
+  const unselectedPresets = globalThis.CommlinkCaller.RINGTONE_PRESETS.map((preset) => ({
+    label: preset.label,
+    path: preset.path,
+    selected: false
+  }));
+
   globalThis.game = {
     settings: {
       get: () => [
@@ -247,7 +254,8 @@ test("contact manager context renders normalized contacts and selected editor co
       volume: 0.5
     }],
     editorContact: null,
-    isEditing: false
+    isEditing: false,
+    ringtonePresets: unselectedPresets
   });
 
   manager._editContact({
@@ -276,7 +284,8 @@ test("contact manager context renders normalized contacts and selected editor co
       message: "Ready?",
       volume: 0.5
     },
-    isEditing: true
+    isEditing: true,
+    ringtonePresets: unselectedPresets
   });
 });
 
@@ -410,8 +419,36 @@ test("contact manager template keeps ids internal and exposes FilePicker buttons
 
   assert.equal(template.includes("name=\"id\""), false);
   assert.equal(template.includes("name=\"originalId\""), false);
+  assert.equal(template.includes("name=\"ringtonePreset\""), true);
+  assert.equal(template.includes("data-action=\"apply-ringtone-preset\""), true);
   assert.equal(template.includes("data-action=\"browse-file\" data-target=\"portrait\" data-type=\"image\""), true);
   assert.equal(template.includes("data-action=\"browse-file\" data-target=\"ringtone\" data-type=\"audio\""), true);
+});
+
+test("bundled ringtone presets cover common genres and point to shipped audio", async () => {
+  const labels = globalThis.CommlinkCaller.RINGTONE_PRESETS.map((preset) => preset.label);
+
+  assert.equal(labels.some((label) => label.includes("Fantasy")), true);
+  assert.equal(labels.some((label) => label.includes("Gothic")), true);
+  assert.equal(labels.some((label) => label.includes("Western")), true);
+  assert.equal(labels.some((label) => label.includes("1950s")), true);
+  assert.equal(labels.some((label) => label.includes("Modern")), true);
+  assert.equal(labels.some((label) => label.includes("Cyberpunk")), true);
+  assert.equal(labels.some((label) => label.includes("Far Future")), true);
+
+  for (const preset of globalThis.CommlinkCaller.RINGTONE_PRESETS) {
+    assert.equal(preset.path.startsWith("modules/foundry-commlink-caller/assets/sounds/ringtones/"), true);
+
+    const localPath = preset.path.replace("modules/foundry-commlink-caller/", "../");
+    const audioFile = await stat(new URL(localPath, import.meta.url));
+
+    assert.equal(audioFile.isFile(), true);
+    assert.equal(audioFile.size > 0, true);
+  }
+
+  const credits = await readFile(new URL("../assets/sounds/CREDITS.md", import.meta.url), "utf8");
+
+  assert.equal(credits.includes("Creative Commons Zero"), true);
 });
 
 test("contact manager file buttons delegate to Foundry FilePicker.fromButton", async () => {
@@ -446,6 +483,22 @@ test("contact manager file buttons delegate to Foundry FilePicker.fromButton", a
     if (originalHTMLButtonElement) globalThis.HTMLButtonElement = originalHTMLButtonElement;
     else delete globalThis.HTMLButtonElement;
   }
+});
+
+test("ringtone preset selection fills the ringtone path", () => {
+  const ringtoneInput = { value: "" };
+  const form = {
+    querySelector: (selector) => selector === "[name='ringtone']" ? ringtoneInput : null
+  };
+  const select = {
+    value: "modules/foundry-commlink-caller/assets/sounds/ringtones/modern-alert.ogg",
+    closest: (selector) => selector === "[data-contact-form]" ? form : null
+  };
+  const manager = new globalThis.CommlinkCaller.ContactManager();
+
+  manager._applyRingtonePreset({ currentTarget: select });
+
+  assert.equal(ringtoneInput.value, "modules/foundry-commlink-caller/assets/sounds/ringtones/modern-alert.ogg");
 });
 
 test("saving an existing contact preserves the selected contact ID", async () => {
