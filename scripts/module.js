@@ -1,23 +1,29 @@
 const MODULE_ID = "foundry-commlink-caller";
-const WELCOME_TEMPLATE = `modules/${MODULE_ID}/templates/welcome.hbs`;
+const CONTACTS_SETTING = "contacts";
+const SOCKET_NAME = `module.${MODULE_ID}`;
+const TEMPLATES = Object.freeze({});
+const {
+  ApplicationV2,
+  DialogV2,
+  HandlebarsApplicationMixin
+} = foundry.applications.api;
 
-Hooks.once("ready", async () => {
-  if (!game.user?.isGM) return;
+globalThis.CommlinkCaller = globalThis.CommlinkCaller || {};
+globalThis.CommlinkCaller.MODULE_ID = MODULE_ID;
+globalThis.CommlinkCaller.CONTACTS_SETTING = CONTACTS_SETTING;
+globalThis.CommlinkCaller.SOCKET_NAME = SOCKET_NAME;
+globalThis.CommlinkCaller.TEMPLATES = TEMPLATES;
+globalThis.CommlinkCaller.ApplicationV2 = ApplicationV2;
+globalThis.CommlinkCaller.DialogV2 = DialogV2;
+globalThis.CommlinkCaller.HandlebarsApplicationMixin = HandlebarsApplicationMixin;
 
-  const content = await renderTemplate(WELCOME_TEMPLATE, {
-    title: "Commlink Caller",
-    subtitle: "Incoming signal tools for cyberpunk tables.",
-    moduleId: MODULE_ID,
+Hooks.once("init", () => {
+  game.settings.register(MODULE_ID, CONTACTS_SETTING, {
+    name: "Commlink contacts",
+    hint: "Stored contacts available to GMs for commlink calls.",
+    scope: "world",
+    config: false,
+    type: Array,
+    default: []
   });
-
-  new Dialog({
-    title: "Commlink Caller",
-    content,
-    buttons: {
-      close: {
-        label: "Close",
-      },
-    },
-    default: "close",
-  }).render(true);
 });

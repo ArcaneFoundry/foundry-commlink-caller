@@ -12,10 +12,11 @@
   "url": "https://github.com/ArcaneFoundry/foundry-commlink-caller",
   "license": "MIT",
   "compatibility": {
-    "minimum": "12",
-    "verified": "13"
+    "minimum": "13",
+    "verified": "14"
   },
   "scripts": [
+    "scripts/contact-model.js",
     "scripts/module.js"
   ],
   "styles": [
