@@ -1,0 +1,44 @@
+.commlink-caller-welcome {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.25rem 0;
+}
+
+.commlink-caller-welcome__signal {
+  border: 1px solid rgba(0, 200, 180, 0.45);
+  border-radius: 6px;
+  padding: 0.9rem;
+  background: linear-gradient(135deg, rgba(0, 38, 43, 0.88), rgba(20, 20, 28, 0.94));
+  color: #eafffb;
+}
+
+.commlink-caller-welcome__eyebrow {
+  margin: 0 0 0.35rem;
+  color: #7df7e7;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.commlink-caller-welcome__title {
+  margin: 0;
+  color: #ffffff;
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+
+.commlink-caller-welcome__subtitle {
+  margin: 0.5rem 0 0;
+  color: #c7f7ef;
+}
+
+.commlink-caller-welcome__body {
+  margin: 0;
+}
+
+.commlink-caller-welcome__next {
+  margin: 0;
+  color: var(--color-text-dark-secondary, #4b4a44);
+  font-size: 0.9rem;
+}

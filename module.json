@@ -1,0 +1,26 @@
+{
+  "id": "foundry-commlink-caller",
+  "title": "Commlink Caller",
+  "description": "A lightweight Foundry VTT module for cyberpunk comm-link call prompts.",
+  "version": "0.1.0",
+  "authors": [
+    {
+      "name": "John Gallego",
+      "url": "https://github.com/JohnGallego"
+    }
+  ],
+  "url": "https://github.com/ArcaneForge/foundry-commlink-caller",
+  "license": "MIT",
+  "compatibility": {
+    "minimum": "12",
+    "verified": "13"
+  },
+  "scripts": [
+    "scripts/module.js"
+  ],
+  "styles": [
+    "styles/module.css"
+  ],
+  "manifest": "https://raw.githubusercontent.com/ArcaneForge/foundry-commlink-caller/main/module.json",
+  "download": "https://github.com/ArcaneForge/foundry-commlink-caller/releases/download/v0.1.0/foundry-commlink-caller-v0.1.0.zip"
+}
