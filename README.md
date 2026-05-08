@@ -9,7 +9,7 @@ This first version only proves the module loads: when a GM opens a world with th
 Use this manifest URL once the repository has a release:
 
 ```text
-https://raw.githubusercontent.com/ArcaneForge/foundry-commlink-caller/main/module.json
+https://raw.githubusercontent.com/ArcaneFoundry/foundry-commlink-caller/main/module.json
 ```
 
 For local development, copy or symlink this folder into Foundry's `Data/modules` directory, then enable **Commlink Caller** in your world.

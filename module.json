@@ -9,7 +9,7 @@
       "url": "https://github.com/JohnGallego"
     }
   ],
-  "url": "https://github.com/ArcaneForge/foundry-commlink-caller",
+  "url": "https://github.com/ArcaneFoundry/foundry-commlink-caller",
   "license": "MIT",
   "compatibility": {
     "minimum": "12",
@@ -21,6 +21,6 @@
   "styles": [
     "styles/module.css"
   ],
-  "manifest": "https://raw.githubusercontent.com/ArcaneForge/foundry-commlink-caller/main/module.json",
-  "download": "https://github.com/ArcaneForge/foundry-commlink-caller/releases/download/v0.1.0/foundry-commlink-caller-v0.1.0.zip"
+  "manifest": "https://raw.githubusercontent.com/ArcaneFoundry/foundry-commlink-caller/main/module.json",
+  "download": "https://github.com/ArcaneFoundry/foundry-commlink-caller/releases/download/v0.1.0/foundry-commlink-caller-v0.1.0.zip"
 }
