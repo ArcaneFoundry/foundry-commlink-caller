@@ -1,6 +1,7 @@
 const MODULE_ID = "foundry-commlink-caller";
 const CONTACTS_SETTING = "contacts";
-const WELCOME_DISMISSED_SETTING = "welcomeDismissed";
+const SHOW_WELCOME_SETTING = "showWelcome";
+const SHOW_SCENE_CONTROL_BUTTON_SETTING = "showSceneControlButton";
 const SOCKET_NAME = `module.${MODULE_ID}`;
 const TEMPLATES = Object.freeze({
   manager: `modules/${MODULE_ID}/templates/contact-manager.hbs`,
@@ -17,7 +18,8 @@ const {
 globalThis.CommlinkCaller = globalThis.CommlinkCaller || {};
 globalThis.CommlinkCaller.MODULE_ID = MODULE_ID;
 globalThis.CommlinkCaller.CONTACTS_SETTING = CONTACTS_SETTING;
-globalThis.CommlinkCaller.WELCOME_DISMISSED_SETTING = WELCOME_DISMISSED_SETTING;
+globalThis.CommlinkCaller.SHOW_WELCOME_SETTING = SHOW_WELCOME_SETTING;
+globalThis.CommlinkCaller.SHOW_SCENE_CONTROL_BUTTON_SETTING = SHOW_SCENE_CONTROL_BUTTON_SETTING;
 globalThis.CommlinkCaller.SOCKET_NAME = SOCKET_NAME;
 globalThis.CommlinkCaller.TEMPLATES = TEMPLATES;
 globalThis.CommlinkCaller.ApplicationV2 = ApplicationV2;
@@ -80,7 +82,7 @@ function getWelcomeScreen() {
 }
 
 function shouldShowWelcome() {
-  return Boolean(game.user?.isGM) && !game.settings.get(MODULE_ID, WELCOME_DISMISSED_SETTING);
+  return Boolean(game.user?.isGM) && game.settings.get(MODULE_ID, SHOW_WELCOME_SETTING);
 }
 
 function openWelcomeScreen({ force = false } = {}) {
@@ -248,7 +250,7 @@ class WelcomeScreen extends HandlebarsApplicationMixin(ApplicationV2) {
   async _savePreference() {
     if (this._preferenceSaved || !game.user?.isGM) return;
 
-    await game.settings.set(MODULE_ID, WELCOME_DISMISSED_SETTING, this._hideOnNextLogin);
+    await game.settings.set(MODULE_ID, SHOW_WELCOME_SETTING, !this._hideOnNextLogin);
     this._preferenceSaved = true;
   }
 }
@@ -436,13 +438,25 @@ Hooks.once("init", () => {
     default: []
   });
 
-  game.settings.register(MODULE_ID, WELCOME_DISMISSED_SETTING, {
-    name: "Hide welcome tutorial",
-    hint: "Whether this GM has dismissed the Commlink Caller welcome tutorial.",
+  game.settings.register(MODULE_ID, SHOW_WELCOME_SETTING, {
+    name: "Show welcome screen",
+    hint: "Show the Commlink Caller welcome tutorial for this user. GMs only; players never receive the welcome screen.",
     scope: "user",
-    config: false,
+    config: true,
     type: Boolean,
-    default: false
+    default: true,
+    onChange: (value) => {
+      if (value) globalThis.CommlinkCaller.openWelcomeScreen({ force: true });
+    }
+  });
+
+  game.settings.register(MODULE_ID, SHOW_SCENE_CONTROL_BUTTON_SETTING, {
+    name: "Show GM scene-control button",
+    hint: "Show the Commlink contacts shortcut in the Token scene controls for GMs.",
+    scope: "user",
+    config: true,
+    type: Boolean,
+    default: true
   });
 
   game.settings.registerMenu(MODULE_ID, "contactManager", {
@@ -464,7 +478,7 @@ Hooks.on("getSceneControlButtons", (controls) => {
     icon: "fa-solid fa-satellite-dish",
     order: Object.keys(controls.tokens.tools).length,
     button: true,
-    visible: game.user?.isGM,
+    visible: Boolean(game.user?.isGM) && game.settings.get(MODULE_ID, SHOW_SCENE_CONTROL_BUTTON_SETTING),
     onChange: () => {
       globalThis.CommlinkCaller.openContactManager();
     }

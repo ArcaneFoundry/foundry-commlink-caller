@@ -21,7 +21,9 @@ For local development, copy or symlink this repository folder into Foundry's `Da
 3. Add or edit contacts, then save each contact's name, handle, portrait, ringtone, and message.
 4. Click **Call** on a saved contact to send an incoming call prompt to connected players.
 
-GMs see a short welcome tutorial the first time the module loads. Leave **Don't show this again on my next login** checked to dismiss it for future logins, or uncheck it before closing to see it again next time. Players never see this welcome screen.
+GMs see a short welcome tutorial when **Show welcome screen** is enabled in Commlink Caller's settings. Leave **Don't show this again on my next login** checked to turn that setting off after the tutorial closes, or uncheck it before closing to see it again next time. Players never see this welcome screen.
+
+Use **Show GM scene-control button** in Commlink Caller's settings to show or hide the GM-only scene-control shortcut.
 
 You can also open the Contact Manager from a macro:
 

@@ -17,7 +17,7 @@ test("module manifest advertises v13/v14 compatibility and loads contact model f
   ]);
 });
 
-test("module bootstrap registers hidden world contacts setting and GM menu during init", async () => {
+test("module bootstrap registers settings and GM menu during init", async () => {
   const registeredHooks = new Map();
   const registeredPersistentHooks = new Map();
   const registeredSettings = [];
@@ -89,14 +89,27 @@ test("module bootstrap registers hidden world contacts setting and GM menu durin
     ],
     [
       "foundry-commlink-caller",
-      "welcomeDismissed",
+      "showWelcome",
       {
-        name: "Hide welcome tutorial",
-        hint: "Whether this GM has dismissed the Commlink Caller welcome tutorial.",
+        name: "Show welcome screen",
+        hint: "Show the Commlink Caller welcome tutorial for this user. GMs only; players never receive the welcome screen.",
         scope: "user",
-        config: false,
+        config: true,
         type: Boolean,
-        default: false
+        default: true,
+        onChange: registeredSettings[1][2].onChange
+      }
+    ],
+    [
+      "foundry-commlink-caller",
+      "showSceneControlButton",
+      {
+        name: "Show GM scene-control button",
+        hint: "Show the Commlink contacts shortcut in the Token scene controls for GMs.",
+        scope: "user",
+        config: true,
+        type: Boolean,
+        default: true
       }
     ]
   ]);
@@ -134,6 +147,24 @@ test("module bootstrap registers hidden world contacts setting and GM menu durin
     visible: true,
     onChange: controls.tokens.tools.commlinkCaller.onChange
   });
+
+  globalThis.game.settings.get = (moduleId, setting) => {
+    assert.equal(moduleId, "foundry-commlink-caller");
+    return setting !== "showSceneControlButton";
+  };
+
+  const hiddenControls = { tokens: { tools: { select: {} } } };
+  registeredPersistentHooks.get("getSceneControlButtons")(hiddenControls);
+
+  assert.equal(hiddenControls.tokens.tools.commlinkCaller.visible, false);
+
+  globalThis.game.user.isGM = false;
+  globalThis.game.settings.get = () => true;
+
+  const playerControls = { tokens: { tools: { select: {} } } };
+  registeredPersistentHooks.get("getSceneControlButtons")(playerControls);
+
+  assert.equal(playerControls.tokens.tools.commlinkCaller.visible, false);
 });
 
 test("contact helpers read and persist normalized contacts through Foundry settings", async () => {
@@ -286,7 +317,7 @@ test("openContactManager is GM-only and reuses the existing window", async () =>
   assert.deepEqual(existingManager.renderOptions, { force: true });
 });
 
-test("welcome screen opens only for GMs who have not dismissed it", async () => {
+test("welcome screen opens only for GMs with the setting enabled", async () => {
   const savedSettings = [];
   const originalFormData = globalThis.FormData;
   const existingWelcome = new globalThis.CommlinkCaller.WelcomeScreen();
@@ -313,11 +344,11 @@ test("welcome screen opens only for GMs who have not dismissed it", async () => 
     assert.equal(globalThis.CommlinkCaller.openWelcomeScreen(), null);
 
     globalThis.game.user.isGM = true;
-    globalThis.game.settings.get = () => true;
+    globalThis.game.settings.get = () => false;
 
     assert.equal(globalThis.CommlinkCaller.openWelcomeScreen(), null);
 
-    globalThis.game.settings.get = () => false;
+    globalThis.game.settings.get = () => true;
 
     const newWelcome = globalThis.CommlinkCaller.openWelcomeScreen();
 
@@ -343,8 +374,8 @@ test("welcome screen opens only for GMs who have not dismissed it", async () => 
 
     assert.deepEqual(savedSettings.at(-1), [
       "foundry-commlink-caller",
-      "welcomeDismissed",
-      true
+      "showWelcome",
+      false
     ]);
 
     const showAgainWelcome = new globalThis.CommlinkCaller.WelcomeScreen();
@@ -356,8 +387,8 @@ test("welcome screen opens only for GMs who have not dismissed it", async () => 
 
     assert.deepEqual(savedSettings.at(-1), [
       "foundry-commlink-caller",
-      "welcomeDismissed",
-      false
+      "showWelcome",
+      true
     ]);
   } finally {
     globalThis.FormData = originalFormData;
