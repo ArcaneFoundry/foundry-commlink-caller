@@ -17,9 +17,17 @@ For local development, copy or symlink this repository folder into Foundry's `Da
 ## Use
 
 1. As the GM, open **Configure Settings** for the world and confirm **Commlink Caller** is enabled.
-2. Open the Contact Manager from **Commlink contacts**.
+2. Open the Contact Manager from the scene controls, or from **Configure Settings** > **Commlink contacts**.
 3. Add or edit contacts, then save each contact's name, handle, portrait, ringtone, and message.
 4. Click **Call** on a saved contact to send an incoming call prompt to connected players.
+
+You can also open the Contact Manager from a macro:
+
+```js
+CommlinkCaller.openContactManager();
+```
+
+Use the file picker buttons beside **Portrait** and **Ringtone** to choose image and audio paths from Foundry's file browser.
 
 ## Verify
 

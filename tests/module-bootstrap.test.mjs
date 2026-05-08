@@ -19,12 +19,14 @@ test("module manifest advertises v13/v14 compatibility and loads contact model f
 
 test("module bootstrap registers hidden world contacts setting and GM menu during init", async () => {
   const registeredHooks = new Map();
+  const registeredPersistentHooks = new Map();
   const registeredSettings = [];
   const registeredMenus = [];
   const socketHandlers = [];
 
   globalThis.foundry = {
     applications: {
+      instances: new Map(),
       api: {
         ApplicationV2: class ApplicationV2 {
           constructor() {
@@ -38,10 +40,16 @@ test("module bootstrap registers hidden world contacts setting and GM menu durin
         },
         DialogV2: class DialogV2 {},
         HandlebarsApplicationMixin: (base) => base
+      },
+      apps: {
+        FilePicker: {
+          fromButton: () => ({ render: () => {} })
+        }
       }
     }
   };
   globalThis.game = {
+    user: { isGM: true },
     socket: {
       on: (...args) => socketHandlers.push(args)
     },
@@ -51,7 +59,8 @@ test("module bootstrap registers hidden world contacts setting and GM menu durin
     }
   };
   globalThis.Hooks = {
-    once: (hookName, callback) => registeredHooks.set(hookName, callback)
+    once: (hookName, callback) => registeredHooks.set(hookName, callback),
+    on: (hookName, callback) => registeredPersistentHooks.set(hookName, callback)
   };
   globalThis.CommlinkCaller = { contactModel };
 
@@ -60,6 +69,7 @@ test("module bootstrap registers hidden world contacts setting and GM menu durin
   assert.equal(typeof globalThis.CommlinkCaller, "object");
   assert.equal(registeredHooks.has("init"), true);
   assert.equal(registeredHooks.has("ready"), true);
+  assert.equal(registeredPersistentHooks.has("getSceneControlButtons"), true);
 
   registeredHooks.get("init")();
 
@@ -95,6 +105,19 @@ test("module bootstrap registers hidden world contacts setting and GM menu durin
     "module.foundry-commlink-caller",
     globalThis.CommlinkCaller.receiveSocketMessage
   ]]);
+
+  const controls = { tokens: { tools: { select: {} } } };
+  registeredPersistentHooks.get("getSceneControlButtons")(controls);
+
+  assert.deepEqual(controls.tokens.tools.commlinkCaller, {
+    name: "commlinkCaller",
+    title: "Commlink contacts",
+    icon: "fa-solid fa-satellite-dish",
+    order: 1,
+    button: true,
+    visible: true,
+    onChange: controls.tokens.tools.commlinkCaller.onChange
+  });
 });
 
 test("contact helpers read and persist normalized contacts through Foundry settings", async () => {
@@ -210,11 +233,84 @@ test("contact manager context renders normalized contacts and selected editor co
   });
 });
 
-test("contact manager template does not expose contact IDs as form fields", async () => {
+test("openContactManager is GM-only and reuses the existing window", async () => {
+  const warnings = [];
+  const existingManager = new globalThis.CommlinkCaller.ContactManager();
+
+  globalThis.foundry.applications.instances = new Map();
+  globalThis.ui = {
+    notifications: {
+      warn: (message) => warnings.push(message)
+    }
+  };
+  globalThis.game = {
+    user: { isGM: false }
+  };
+
+  assert.equal(globalThis.CommlinkCaller.openContactManager(), null);
+  assert.deepEqual(warnings, ["Only GMs can manage commlink contacts."]);
+
+  globalThis.game.user.isGM = true;
+
+  const newManager = globalThis.CommlinkCaller.openContactManager();
+
+  assert.ok(newManager instanceof globalThis.CommlinkCaller.ContactManager);
+  assert.equal(newManager.renderCount, 1);
+  assert.deepEqual(newManager.renderOptions, { force: true });
+
+  globalThis.foundry.applications.instances.set(
+    globalThis.CommlinkCaller.ContactManager.DEFAULT_OPTIONS.id,
+    existingManager
+  );
+
+  const reusedManager = globalThis.CommlinkCaller.openContactManager();
+
+  assert.equal(reusedManager, existingManager);
+  assert.equal(existingManager.renderCount, 1);
+  assert.deepEqual(existingManager.renderOptions, { force: true });
+});
+
+test("contact manager template keeps ids internal and exposes FilePicker buttons", async () => {
   const template = await readFile(new URL("../templates/contact-manager.hbs", import.meta.url), "utf8");
 
   assert.equal(template.includes("name=\"id\""), false);
   assert.equal(template.includes("name=\"originalId\""), false);
+  assert.equal(template.includes("data-action=\"browse-file\" data-target=\"portrait\" data-type=\"image\""), true);
+  assert.equal(template.includes("data-action=\"browse-file\" data-target=\"ringtone\" data-type=\"audio\""), true);
+});
+
+test("contact manager file buttons delegate to Foundry FilePicker.fromButton", async () => {
+  const renderedPickers = [];
+  const fromButtonCalls = [];
+  const originalHTMLButtonElement = globalThis.HTMLButtonElement;
+  const button = {};
+
+  globalThis.HTMLButtonElement = class HTMLButtonElement {};
+  Object.setPrototypeOf(button, globalThis.HTMLButtonElement.prototype);
+  globalThis.foundry.applications.apps.FilePicker = {
+    fromButton: (targetButton) => {
+      fromButtonCalls.push(targetButton);
+
+      return {
+        render: (options) => renderedPickers.push(options)
+      };
+    }
+  };
+
+  try {
+    const manager = new globalThis.CommlinkCaller.ContactManager();
+
+    manager._browseFile({
+      preventDefault: () => {},
+      currentTarget: button
+    });
+
+    assert.deepEqual(fromButtonCalls, [button]);
+    assert.deepEqual(renderedPickers, [{ force: true }]);
+  } finally {
+    if (originalHTMLButtonElement) globalThis.HTMLButtonElement = originalHTMLButtonElement;
+    else delete globalThis.HTMLButtonElement;
+  }
 });
 
 test("saving an existing contact preserves the selected contact ID", async () => {

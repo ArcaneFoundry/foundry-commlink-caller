@@ -61,12 +61,22 @@
 
           <label>
             <span>Portrait</span>
-            <input type="text" name="portrait" value="{{editorContact.portrait}}" autocomplete="off">
+            <div class="commlink-caller-editor__file-field">
+              <input type="text" name="portrait" value="{{editorContact.portrait}}" autocomplete="off">
+              <button type="button" data-action="browse-file" data-target="portrait" data-type="image" aria-label="Browse portrait">
+                <i class="fas fa-file-image" aria-hidden="true"></i>
+              </button>
+            </div>
           </label>
 
           <label>
             <span>Ringtone</span>
-            <input type="text" name="ringtone" value="{{editorContact.ringtone}}" autocomplete="off">
+            <div class="commlink-caller-editor__file-field">
+              <input type="text" name="ringtone" value="{{editorContact.ringtone}}" autocomplete="off">
+              <button type="button" data-action="browse-file" data-target="ringtone" data-type="audio" aria-label="Browse ringtone">
+                <i class="fas fa-file-audio" aria-hidden="true"></i>
+              </button>
+            </div>
           </label>
 
           <label>

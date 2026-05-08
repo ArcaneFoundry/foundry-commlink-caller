@@ -55,6 +55,23 @@ function getFormString(formData, fieldName) {
   return typeof value === "string" ? value : "";
 }
 
+function getContactManager() {
+  return foundry.applications.instances.get(ContactManager.DEFAULT_OPTIONS.id);
+}
+
+function openContactManager() {
+  if (!game.user?.isGM) {
+    globalThis.ui?.notifications?.warn?.("Only GMs can manage commlink contacts.");
+    return null;
+  }
+
+  const manager = getContactManager() || new ContactManager();
+  manager.render({ force: true });
+  manager.bringToFront?.();
+
+  return manager;
+}
+
 async function placeCall(contactId) {
   if (!game.user?.isGM) {
     globalThis.ui?.notifications?.warn?.("Only GMs can place commlink calls.");
@@ -181,6 +198,9 @@ class ContactManager extends HandlebarsApplicationMixin(ApplicationV2) {
     element.querySelectorAll("[data-action='cancel']").forEach((button) => {
       button.addEventListener("click", this._cancelEdit.bind(this));
     });
+    element.querySelectorAll("[data-action='browse-file']").forEach((button) => {
+      button.addEventListener("click", this._browseFile.bind(this));
+    });
   }
 
   _getEditorContact(contacts) {
@@ -232,6 +252,15 @@ class ContactManager extends HandlebarsApplicationMixin(ApplicationV2) {
     this.render({ force: true });
   }
 
+  _browseFile(event) {
+    event?.preventDefault();
+
+    const button = event?.currentTarget;
+    if (!(button instanceof HTMLButtonElement)) return;
+
+    foundry.applications.apps.FilePicker.fromButton(button).render({ force: true });
+  }
+
   async _saveContact(event) {
     event?.preventDefault();
 
@@ -275,6 +304,7 @@ class ContactManager extends HandlebarsApplicationMixin(ApplicationV2) {
 
 globalThis.CommlinkCaller.getContacts = getContacts;
 globalThis.CommlinkCaller.setContacts = setContacts;
+globalThis.CommlinkCaller.openContactManager = openContactManager;
 globalThis.CommlinkCaller.placeCall = placeCall;
 globalThis.CommlinkCaller.receiveSocketMessage = receiveSocketMessage;
 globalThis.CommlinkCaller.playRingtone = playRingtone;
@@ -299,6 +329,22 @@ Hooks.once("init", () => {
     restricted: true,
     type: ContactManager
   });
+});
+
+Hooks.on("getSceneControlButtons", (controls) => {
+  if (!controls?.tokens?.tools) return;
+
+  controls.tokens.tools.commlinkCaller = {
+    name: "commlinkCaller",
+    title: "Commlink contacts",
+    icon: "fa-solid fa-satellite-dish",
+    order: Object.keys(controls.tokens.tools).length,
+    button: true,
+    visible: game.user?.isGM,
+    onChange: () => {
+      globalThis.CommlinkCaller.openContactManager();
+    }
+  };
 });
 
 Hooks.once("ready", () => {
