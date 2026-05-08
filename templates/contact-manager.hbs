@@ -1,0 +1,102 @@
+<section class="commlink-caller-manager">
+  <header class="commlink-caller-manager__header">
+    <h2 class="commlink-caller-manager__title">Contacts</h2>
+    <button type="button" data-action="new">
+      <i class="fas fa-plus" aria-hidden="true"></i>
+      New
+    </button>
+  </header>
+
+  <div class="commlink-caller-manager__body">
+    <ol class="commlink-caller-manager__list">
+      {{#each contacts}}
+        <li class="commlink-caller-contact">
+          <div class="commlink-caller-contact__portrait">
+            {{#if portrait}}
+              <img src="{{portrait}}" alt="{{name}}" loading="lazy">
+            {{else}}
+              <i class="fas fa-satellite-dish" aria-hidden="true"></i>
+            {{/if}}
+          </div>
+
+          <div class="commlink-caller-contact__summary">
+            <strong>{{name}}</strong>
+            {{#if handle}}
+              <span>{{handle}}</span>
+            {{/if}}
+          </div>
+
+          <div class="commlink-caller-contact__actions">
+            <button type="button" data-action="call" data-contact-id="{{id}}">
+              <i class="fas fa-phone" aria-hidden="true"></i>
+              Call
+            </button>
+            <button type="button" data-action="edit" data-contact-id="{{id}}">
+              <i class="fas fa-pen-to-square" aria-hidden="true"></i>
+              Edit
+            </button>
+            <button type="button" data-action="delete" data-contact-id="{{id}}">
+              <i class="fas fa-trash" aria-hidden="true"></i>
+              Delete
+            </button>
+          </div>
+        </li>
+      {{else}}
+        <li class="commlink-caller-manager__empty">No contacts configured.</li>
+      {{/each}}
+    </ol>
+
+    <section class="commlink-caller-editor">
+      {{#if isEditing}}
+        <form data-contact-form>
+          <input type="hidden" name="originalId" value="{{editorContact.id}}">
+
+          <label>
+            <span>ID</span>
+            <input type="text" name="id" value="{{editorContact.id}}" autocomplete="off">
+          </label>
+
+          <label>
+            <span>Name</span>
+            <input type="text" name="name" value="{{editorContact.name}}" autocomplete="off" required>
+          </label>
+
+          <label>
+            <span>Handle</span>
+            <input type="text" name="handle" value="{{editorContact.handle}}" autocomplete="off">
+          </label>
+
+          <label>
+            <span>Portrait</span>
+            <input type="text" name="portrait" value="{{editorContact.portrait}}" autocomplete="off">
+          </label>
+
+          <label>
+            <span>Ringtone</span>
+            <input type="text" name="ringtone" value="{{editorContact.ringtone}}" autocomplete="off">
+          </label>
+
+          <label>
+            <span>Message</span>
+            <textarea name="message" rows="3">{{editorContact.message}}</textarea>
+          </label>
+
+          <label>
+            <span>Volume</span>
+            <input type="number" name="volume" value="{{editorContact.volume}}" min="0" max="1" step="0.05">
+          </label>
+
+          <footer class="commlink-caller-editor__actions">
+            <button type="submit">
+              <i class="fas fa-floppy-disk" aria-hidden="true"></i>
+              Save
+            </button>
+            <button type="button" data-action="cancel">Cancel</button>
+          </footer>
+        </form>
+      {{else}}
+        <p class="commlink-caller-editor__empty">Select a contact or create a new one.</p>
+      {{/if}}
+    </section>
+  </div>
+</section>
