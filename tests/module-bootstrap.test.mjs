@@ -210,6 +210,184 @@ test("contact manager context renders normalized contacts and selected editor co
   });
 });
 
+test("contact manager template does not expose contact IDs as form fields", async () => {
+  const template = await readFile(new URL("../templates/contact-manager.hbs", import.meta.url), "utf8");
+
+  assert.equal(template.includes("name=\"id\""), false);
+  assert.equal(template.includes("name=\"originalId\""), false);
+});
+
+test("saving an existing contact preserves the selected contact ID", async () => {
+  const savedSettings = [];
+  const contacts = [
+    {
+      id: "ace",
+      name: "Ace",
+      handle: "channel-1",
+      portrait: "",
+      ringtone: "",
+      message: "Ready?",
+      volume: 0.5
+    },
+    {
+      id: "target",
+      name: "Target",
+      handle: "channel-2",
+      portrait: "",
+      ringtone: "",
+      message: "Standing by",
+      volume: 0.25
+    }
+  ];
+  const originalFormData = globalThis.FormData;
+
+  globalThis.FormData = class TestFormData {
+    constructor(form) {
+      this.form = form;
+    }
+
+    get(fieldName) {
+      return this.form[fieldName] || "";
+    }
+  };
+  globalThis.game = {
+    settings: {
+      get: () => contacts,
+      set: async (...args) => savedSettings.push(args)
+    }
+  };
+
+  try {
+    const manager = new globalThis.CommlinkCaller.ContactManager();
+    manager._editingContactId = "ace";
+
+    await manager._saveContact({
+      preventDefault: () => {},
+      currentTarget: {
+        originalId: "target",
+        id: "target",
+        name: "Ace Updated",
+        handle: "channel-updated",
+        portrait: "ace.webp",
+        ringtone: "ace.ogg",
+        message: "Updated",
+        volume: "0.75"
+      }
+    });
+
+    assert.deepEqual(savedSettings, [[
+      "foundry-commlink-caller",
+      "contacts",
+      [
+        {
+          id: "ace",
+          name: "Ace Updated",
+          handle: "channel-updated",
+          portrait: "ace.webp",
+          ringtone: "ace.ogg",
+          message: "Updated",
+          volume: 0.75
+        },
+        {
+          id: "target",
+          name: "Target",
+          handle: "channel-2",
+          portrait: "",
+          ringtone: "",
+          message: "Standing by",
+          volume: 0.25
+        }
+      ]
+    ]]);
+    assert.equal(manager._editingContactId, null);
+  } finally {
+    globalThis.FormData = originalFormData;
+  }
+});
+
+test("saving a new contact generates a fresh ID instead of trusting form IDs", async () => {
+  const savedSettings = [];
+  const contacts = [{
+    id: "target",
+    name: "Target",
+    handle: "channel-2",
+    portrait: "",
+    ringtone: "",
+    message: "Standing by",
+    volume: 0.25
+  }];
+  const originalFormData = globalThis.FormData;
+  const originalFoundryUtils = globalThis.foundry.utils;
+
+  globalThis.FormData = class TestFormData {
+    constructor(form) {
+      this.form = form;
+    }
+
+    get(fieldName) {
+      return this.form[fieldName] || "";
+    }
+  };
+  globalThis.foundry.utils = Object.assign({}, originalFoundryUtils, {
+    randomID: () => "generated-contact"
+  });
+  globalThis.game = {
+    settings: {
+      get: () => contacts,
+      set: async (...args) => savedSettings.push(args)
+    }
+  };
+
+  try {
+    const manager = new globalThis.CommlinkCaller.ContactManager();
+    manager._newContact({ preventDefault: () => {} });
+
+    await manager._saveContact({
+      preventDefault: () => {},
+      currentTarget: {
+        originalId: "target",
+        id: "target",
+        name: "Nova",
+        handle: "channel-3",
+        portrait: "nova.webp",
+        ringtone: "nova.ogg",
+        message: "Incoming",
+        volume: "0.65"
+      }
+    });
+
+    assert.deepEqual(savedSettings, [[
+      "foundry-commlink-caller",
+      "contacts",
+      [
+        {
+          id: "target",
+          name: "Target",
+          handle: "channel-2",
+          portrait: "",
+          ringtone: "",
+          message: "Standing by",
+          volume: 0.25
+        },
+        {
+          id: "generated-contact",
+          name: "Nova",
+          handle: "channel-3",
+          portrait: "nova.webp",
+          ringtone: "nova.ogg",
+          message: "Incoming",
+          volume: 0.65
+        }
+      ]
+    ]]);
+    assert.equal(manager._editingContactId, null);
+  } finally {
+    globalThis.FormData = originalFormData;
+    if (originalFoundryUtils) globalThis.foundry.utils = originalFoundryUtils;
+    else delete globalThis.foundry.utils;
+  }
+});
+
 test("placeCall emits normalized incoming-call payload for GMs", async () => {
   const emittedPayloads = [];
   const infos = [];

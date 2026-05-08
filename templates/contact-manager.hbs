@@ -49,13 +49,6 @@
     <section class="commlink-caller-editor">
       {{#if isEditing}}
         <form data-contact-form>
-          <input type="hidden" name="originalId" value="{{editorContact.id}}">
-
-          <label>
-            <span>ID</span>
-            <input type="text" name="id" value="{{editorContact.id}}" autocomplete="off">
-          </label>
-
           <label>
             <span>Name</span>
             <input type="text" name="name" value="{{editorContact.name}}" autocomplete="off" required>

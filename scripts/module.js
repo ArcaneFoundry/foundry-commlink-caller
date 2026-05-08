@@ -239,9 +239,7 @@ class ContactManager extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!form) return;
 
     const formData = new FormData(form);
-    const originalId = getFormString(formData, "originalId");
     const formContact = {
-      id: getFormString(formData, "id"),
       name: getFormString(formData, "name"),
       handle: getFormString(formData, "handle"),
       portrait: getFormString(formData, "portrait"),
@@ -251,8 +249,9 @@ class ContactManager extends HandlebarsApplicationMixin(ApplicationV2) {
     };
     const contacts = getContacts();
     const contactModel = getContactModel();
-    const existingIndex = originalId
-      ? contacts.findIndex((contact) => contact.id === originalId)
+    const editingContactId = this._editingContactId;
+    const existingIndex = editingContactId && editingContactId !== NEW_CONTACT_ID
+      ? contacts.findIndex((contact) => contact.id === editingContactId)
       : -1;
     const savedContact = existingIndex >= 0
       ? contactModel.updateContact(contacts[existingIndex], formContact)
