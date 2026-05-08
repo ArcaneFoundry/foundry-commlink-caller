@@ -69,13 +69,18 @@
     });
   }
 
-  function createCallPayload(contact) {
+  function createCallPayload(contact, options) {
     const normalizedContact = normalizeContact(contact);
 
     if (!normalizedContact) return null;
 
     return {
       type: "incoming-call",
+      callId: trimString(options?.callId),
+      targetUserId: trimString(options?.targetUserId),
+      targetUserName: trimString(options?.targetUserName),
+      callerUserId: trimString(options?.callerUserId),
+      callerUserName: trimString(options?.callerUserName),
       contact: normalizedContact
     };
   }

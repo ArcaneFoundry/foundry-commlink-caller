@@ -2,7 +2,7 @@
 
 Commlink Caller is a lightweight Foundry VTT v13/v14 community module for GM-run commlink calls.
 
-GMs configure world-level contacts with a name, handle, portrait, ringtone, and message. From the contact manager, the GM can place a one-click call that shows an incoming call prompt to connected players and plays the contact ringtone when browser audio is unlocked.
+GMs configure world-level contacts with a name, handle, portrait, ringtone, and message. From the contact manager, the GM can call all players, a specific player, or themself for testing. The recipient sees an incoming commlink prompt with a phone frame, contact portrait, caller details, and answer/dismiss controls while the ringtone plays when browser audio is unlocked.
 
 ## Install
 
@@ -19,11 +19,15 @@ For local development, copy or symlink this repository folder into Foundry's `Da
 1. As the GM, open **Configure Settings** for the world and confirm **Commlink Caller** is enabled.
 2. Open the Contact Manager from the scene controls, or from **Configure Settings** > **Commlink contacts**.
 3. Add or edit contacts, then save each contact's name, handle, portrait, ringtone, and message.
-4. Click **Call** on a saved contact to send an incoming call prompt to connected players.
+4. Choose **All players**, a specific player, or the GM test recipient beside a saved contact.
+5. Click **Call** to ring the selected recipient and show the incoming commlink screen.
+6. Watch Foundry notifications for ringing, answered, or dismissed status.
 
 GMs see a short welcome tutorial when **Show welcome screen** is enabled in Commlink Caller's settings. Leave **Don't show this again on my next login** checked to turn that setting off after the tutorial closes, or uncheck it before closing to see it again next time. Players never see this welcome screen.
 
 Use **Show GM scene-control button** in Commlink Caller's settings to show or hide the GM-only scene-control shortcut.
+
+Players can use Commlink Caller's settings to choose a preferred phone frame and optionally override caller ringtones with one bundled ringtone. Leaving **Preferred ringtone** on **Use caller's ringtone** preserves the GM's contact-specific sound.
 
 You can also open the Contact Manager from a macro:
 

@@ -27,6 +27,11 @@
           </div>
 
           <div class="commlink-caller-contact__actions">
+            <select data-contact-target="{{id}}" aria-label="Call recipient">
+              {{#each ../callTargets}}
+                <option value="{{id}}">{{name}}</option>
+              {{/each}}
+            </select>
             <button type="button" data-action="call" data-contact-id="{{id}}">
               <i class="fas fa-phone" aria-hidden="true"></i>
               Call

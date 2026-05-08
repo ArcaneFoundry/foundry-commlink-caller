@@ -1,12 +1,19 @@
 <section class="commlink-caller-incoming">
-  {{#if contact.portrait}}
-    <div class="commlink-caller-incoming__portrait">
-      <img src="{{contact.portrait}}" alt="{{contact.name}}" loading="lazy">
+  <div class="commlink-caller-phone {{frameClass}}" data-phone-frame="{{frame}}">
+    <div class="commlink-caller-phone__speaker" aria-hidden="true"></div>
+    <div class="commlink-caller-phone__screen">
+      {{#if contact.portrait}}
+        <img src="{{contact.portrait}}" alt="{{contact.name}}" loading="lazy">
+      {{else}}
+        <i class="fas fa-satellite-dish" aria-hidden="true"></i>
+      {{/if}}
     </div>
-  {{/if}}
+    <div class="commlink-caller-phone__button" aria-hidden="true"></div>
+  </div>
 
   <div class="commlink-caller-incoming__body">
     <p class="commlink-caller-incoming__eyebrow">Incoming commlink call</p>
+    <p class="commlink-caller-incoming__target">For {{targetName}}</p>
     <h2 class="commlink-caller-incoming__name">{{contact.name}}</h2>
     {{#if contact.handle}}
       <p class="commlink-caller-incoming__handle">{{contact.handle}}</p>

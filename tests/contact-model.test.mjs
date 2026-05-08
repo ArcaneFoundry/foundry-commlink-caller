@@ -163,6 +163,11 @@ test("createCallPayload returns normalized incoming call payload or null", () =>
     volume: 2
   }), {
     type: "incoming-call",
+    callId: "",
+    targetUserId: "",
+    targetUserName: "",
+    callerUserId: "",
+    callerUserName: "",
     contact: {
       id: "caller",
       name: "Caller",
@@ -171,6 +176,32 @@ test("createCallPayload returns normalized incoming call payload or null", () =>
       ringtone: "",
       message: "Incoming call",
       volume: 1
+    }
+  });
+
+  assert.deepEqual(contactModel.createCallPayload({
+    name: "Caller"
+  }, {
+    callId: " call-1 ",
+    targetUserId: " player-1 ",
+    targetUserName: " Raven ",
+    callerUserId: " gm ",
+    callerUserName: " Gamemaster "
+  }), {
+    type: "incoming-call",
+    callId: "call-1",
+    targetUserId: "player-1",
+    targetUserName: "Raven",
+    callerUserId: "gm",
+    callerUserName: "Gamemaster",
+    contact: {
+      id: "foundry-id",
+      name: "Caller",
+      handle: "",
+      portrait: "",
+      ringtone: "",
+      message: "Incoming call",
+      volume: 0.8
     }
   });
 
