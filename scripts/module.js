@@ -118,7 +118,7 @@ async function showIncomingCall(contact) {
     }]
   });
 
-  dialog.render({ force: true });
+  await dialog.render({ force: true });
 
   return dialog;
 }

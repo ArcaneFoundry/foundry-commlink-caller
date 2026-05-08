@@ -269,6 +269,8 @@ test("receiveSocketMessage ignores GMs and renders incoming calls for players", 
   const audioCalls = [];
   const dialogs = [];
   const templates = [];
+  let finishRender;
+  let receiveComplete = false;
 
   globalThis.foundry.audio = {
     AudioHelper: {
@@ -281,8 +283,12 @@ test("receiveSocketMessage ignores GMs and renders incoming calls for players", 
       dialogs.push(this);
     }
 
-    render(options) {
+    async render(options) {
       this.renderOptions = options;
+      await new Promise((resolve) => {
+        finishRender = resolve;
+      });
+      this.renderComplete = true;
       return this;
     }
   };
@@ -301,7 +307,7 @@ test("receiveSocketMessage ignores GMs and renders incoming calls for players", 
   assert.equal(audioCalls.length, 0);
   assert.equal(dialogs.length, 0);
 
-  await globalThis.CommlinkCaller.receiveSocketMessage({
+  const receivePromise = globalThis.CommlinkCaller.receiveSocketMessage({
     type: "incoming-call",
     contact: {
       id: " caller ",
@@ -313,6 +319,21 @@ test("receiveSocketMessage ignores GMs and renders incoming calls for players", 
       volume: "0.25"
     }
   });
+  receivePromise.then(() => {
+    receiveComplete = true;
+  });
+
+  await new Promise((resolve) => {
+    setImmediate(resolve);
+  });
+
+  assert.equal(dialogs.length, 1);
+  assert.deepEqual(dialogs[0].renderOptions, { force: true });
+  assert.equal(receiveComplete, false);
+
+  finishRender();
+
+  assert.equal(await receivePromise, undefined);
 
   const normalizedContact = {
     id: "caller",
@@ -337,7 +358,6 @@ test("receiveSocketMessage ignores GMs and renders incoming calls for players", 
     "modules/foundry-commlink-caller/templates/incoming-call.hbs",
     { contact: normalizedContact }
   ]]);
-  assert.equal(dialogs.length, 1);
   assert.deepEqual(dialogs[0].options, {
     window: {
       title: "Incoming Commlink Call"
@@ -349,7 +369,28 @@ test("receiveSocketMessage ignores GMs and renders incoming calls for players", 
       default: true
     }]
   });
-  assert.deepEqual(dialogs[0].renderOptions, { force: true });
+  assert.equal(dialogs[0].renderComplete, true);
+
+  finishRender = undefined;
+
+  const shownDialog = globalThis.CommlinkCaller.showIncomingCall(normalizedContact);
+  let showComplete = false;
+  shownDialog.then(() => {
+    showComplete = true;
+  });
+
+  await new Promise((resolve) => {
+    setImmediate(resolve);
+  });
+
+  assert.equal(dialogs.length, 2);
+  assert.deepEqual(dialogs[1].renderOptions, { force: true });
+  assert.equal(showComplete, false);
+
+  finishRender();
+
+  assert.equal(await shownDialog, dialogs[1]);
+  assert.equal(dialogs[1].renderComplete, true);
 
   globalThis.game.user.isGM = true;
 
@@ -359,7 +400,7 @@ test("receiveSocketMessage ignores GMs and renders incoming calls for players", 
   });
 
   assert.equal(audioCalls.length, 1);
-  assert.equal(dialogs.length, 1);
+  assert.equal(dialogs.length, 2);
 });
 
 test("playRingtone skips missing sounds and logs playback failures", async () => {
