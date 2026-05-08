@@ -474,10 +474,12 @@ test("receiveSocketMessage ignores GMs and renders incoming calls for players", 
   globalThis.game = {
     user: { isGM: false }
   };
-  globalThis.renderTemplate = async (...args) => {
-    templates.push(args);
+  globalThis.foundry.applications.handlebars = {
+    renderTemplate: async (...args) => {
+      templates.push(args);
 
-    return "<section class=\"commlink-caller-incoming\">Incoming</section>";
+      return "<section class=\"commlink-caller-incoming\">Incoming</section>";
+    }
   };
 
   await globalThis.CommlinkCaller.receiveSocketMessage({ type: "not-a-call" });

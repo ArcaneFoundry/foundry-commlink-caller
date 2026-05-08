@@ -105,7 +105,7 @@ async function playRingtone(contact) {
 }
 
 async function showIncomingCall(contact) {
-  const content = await renderTemplate(TEMPLATES.incomingCall, { contact });
+  const content = await foundry.applications.handlebars.renderTemplate(TEMPLATES.incomingCall, { contact });
   const dialog = new globalThis.CommlinkCaller.DialogV2({
     window: {
       title: "Incoming Commlink Call"
