@@ -2,7 +2,8 @@ const MODULE_ID = "foundry-commlink-caller";
 const CONTACTS_SETTING = "contacts";
 const SOCKET_NAME = `module.${MODULE_ID}`;
 const TEMPLATES = Object.freeze({
-  manager: `modules/${MODULE_ID}/templates/contact-manager.hbs`
+  manager: `modules/${MODULE_ID}/templates/contact-manager.hbs`,
+  incomingCall: `modules/${MODULE_ID}/templates/incoming-call.hbs`
 });
 const NEW_CONTACT_ID = "__new__";
 const {
@@ -32,6 +33,10 @@ async function setContacts(contacts) {
   return game.settings.set(MODULE_ID, CONTACTS_SETTING, getContactModel().normalizeContacts(contacts));
 }
 
+function getContactId(value) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
 function createEmptyContact() {
   return {
     id: "",
@@ -48,6 +53,74 @@ function getFormString(formData, fieldName) {
   const value = formData.get(fieldName);
 
   return typeof value === "string" ? value : "";
+}
+
+async function placeCall(contactId) {
+  if (!game.user?.isGM) {
+    globalThis.ui?.notifications?.warn?.("Only GMs can place commlink calls.");
+    return null;
+  }
+
+  const targetId = getContactId(contactId);
+  const contact = getContacts().find((candidate) => candidate.id === targetId);
+  const payload = getContactModel().createCallPayload(contact);
+
+  if (!payload) {
+    globalThis.ui?.notifications?.warn?.("Unable to place commlink call.");
+    return null;
+  }
+
+  game.socket.emit(SOCKET_NAME, payload);
+  globalThis.ui?.notifications?.info?.(`Calling ${payload.contact.name}.`);
+
+  return payload;
+}
+
+async function receiveSocketMessage(payload) {
+  if (!payload || payload.type !== "incoming-call") return;
+  if (game.user?.isGM) return;
+
+  const normalizedPayload = getContactModel().createCallPayload(payload.contact);
+  if (!normalizedPayload) return;
+
+  const contact = normalizedPayload.contact;
+
+  await playRingtone(contact);
+  await showIncomingCall(contact);
+}
+
+async function playRingtone(contact) {
+  if (!contact?.ringtone) return;
+
+  try {
+    await foundry.audio.AudioHelper.play({
+      src: contact.ringtone,
+      volume: contact.volume,
+      autoplay: true,
+      loop: false
+    }, false);
+  } catch (error) {
+    console.warn("Commlink Caller failed to play ringtone.", error);
+  }
+}
+
+async function showIncomingCall(contact) {
+  const content = await renderTemplate(TEMPLATES.incomingCall, { contact });
+  const dialog = new globalThis.CommlinkCaller.DialogV2({
+    window: {
+      title: "Incoming Commlink Call"
+    },
+    content,
+    buttons: [{
+      action: "dismiss",
+      label: "Dismiss",
+      default: true
+    }]
+  });
+
+  dialog.render({ force: true });
+
+  return dialog;
 }
 
 class ContactManager extends HandlebarsApplicationMixin(ApplicationV2) {
@@ -203,6 +276,10 @@ class ContactManager extends HandlebarsApplicationMixin(ApplicationV2) {
 
 globalThis.CommlinkCaller.getContacts = getContacts;
 globalThis.CommlinkCaller.setContacts = setContacts;
+globalThis.CommlinkCaller.placeCall = placeCall;
+globalThis.CommlinkCaller.receiveSocketMessage = receiveSocketMessage;
+globalThis.CommlinkCaller.playRingtone = playRingtone;
+globalThis.CommlinkCaller.showIncomingCall = showIncomingCall;
 globalThis.CommlinkCaller.ContactManager = ContactManager;
 
 Hooks.once("init", () => {
@@ -223,4 +300,8 @@ Hooks.once("init", () => {
     restricted: true,
     type: ContactManager
   });
+});
+
+Hooks.once("ready", () => {
+  game.socket.on(SOCKET_NAME, globalThis.CommlinkCaller.receiveSocketMessage);
 });

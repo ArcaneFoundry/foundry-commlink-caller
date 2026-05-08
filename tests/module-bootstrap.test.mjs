@@ -21,6 +21,7 @@ test("module bootstrap registers hidden world contacts setting and GM menu durin
   const registeredHooks = new Map();
   const registeredSettings = [];
   const registeredMenus = [];
+  const socketHandlers = [];
 
   globalThis.foundry = {
     applications: {
@@ -41,6 +42,9 @@ test("module bootstrap registers hidden world contacts setting and GM menu durin
     }
   };
   globalThis.game = {
+    socket: {
+      on: (...args) => socketHandlers.push(args)
+    },
     settings: {
       register: (...args) => registeredSettings.push(args),
       registerMenu: (...args) => registeredMenus.push(args)
@@ -55,7 +59,7 @@ test("module bootstrap registers hidden world contacts setting and GM menu durin
 
   assert.equal(typeof globalThis.CommlinkCaller, "object");
   assert.equal(registeredHooks.has("init"), true);
-  assert.equal(registeredHooks.has("ready"), false);
+  assert.equal(registeredHooks.has("ready"), true);
 
   registeredHooks.get("init")();
 
@@ -84,6 +88,13 @@ test("module bootstrap registers hidden world contacts setting and GM menu durin
       template: "modules/foundry-commlink-caller/templates/contact-manager.hbs"
     }
   });
+
+  registeredHooks.get("ready")();
+
+  assert.deepEqual(socketHandlers, [[
+    "module.foundry-commlink-caller",
+    globalThis.CommlinkCaller.receiveSocketMessage
+  ]]);
 });
 
 test("contact helpers read and persist normalized contacts through Foundry settings", async () => {
@@ -197,4 +208,186 @@ test("contact manager context renders normalized contacts and selected editor co
     },
     isEditing: true
   });
+});
+
+test("placeCall emits normalized incoming-call payload for GMs", async () => {
+  const emittedPayloads = [];
+  const infos = [];
+  const warnings = [];
+
+  globalThis.game = {
+    user: { isGM: true },
+    socket: {
+      emit: (...args) => emittedPayloads.push(args)
+    },
+    settings: {
+      get: () => [{
+        id: "ace",
+        name: " Ace ",
+        handle: " channel-1 ",
+        portrait: "",
+        ringtone: " ring.ogg ",
+        message: " Pick up ",
+        volume: 0.45
+      }]
+    }
+  };
+  globalThis.ui = {
+    notifications: {
+      info: (message) => infos.push(message),
+      warn: (message) => warnings.push(message)
+    }
+  };
+
+  await globalThis.CommlinkCaller.placeCall("ace");
+
+  assert.deepEqual(emittedPayloads, [[
+    "module.foundry-commlink-caller",
+    {
+      type: "incoming-call",
+      contact: {
+        id: "ace",
+        name: "Ace",
+        handle: "channel-1",
+        portrait: "",
+        ringtone: "ring.ogg",
+        message: "Pick up",
+        volume: 0.45
+      }
+    }
+  ]]);
+  assert.deepEqual(infos, ["Calling Ace."]);
+  assert.deepEqual(warnings, []);
+
+  await globalThis.CommlinkCaller.placeCall("missing");
+
+  assert.equal(emittedPayloads.length, 1);
+  assert.equal(warnings.length, 1);
+});
+
+test("receiveSocketMessage ignores GMs and renders incoming calls for players", async () => {
+  const audioCalls = [];
+  const dialogs = [];
+  const templates = [];
+
+  globalThis.foundry.audio = {
+    AudioHelper: {
+      play: async (...args) => audioCalls.push(args)
+    }
+  };
+  globalThis.CommlinkCaller.DialogV2 = class DialogV2 {
+    constructor(options) {
+      this.options = options;
+      dialogs.push(this);
+    }
+
+    render(options) {
+      this.renderOptions = options;
+      return this;
+    }
+  };
+  globalThis.foundry.applications.api.DialogV2 = globalThis.CommlinkCaller.DialogV2;
+  globalThis.game = {
+    user: { isGM: false }
+  };
+  globalThis.renderTemplate = async (...args) => {
+    templates.push(args);
+
+    return "<section class=\"commlink-caller-incoming\">Incoming</section>";
+  };
+
+  await globalThis.CommlinkCaller.receiveSocketMessage({ type: "not-a-call" });
+
+  assert.equal(audioCalls.length, 0);
+  assert.equal(dialogs.length, 0);
+
+  await globalThis.CommlinkCaller.receiveSocketMessage({
+    type: "incoming-call",
+    contact: {
+      id: " caller ",
+      name: " Nova ",
+      handle: " @nova ",
+      portrait: " portrait.webp ",
+      ringtone: " ring.ogg ",
+      message: " Answer? ",
+      volume: "0.25"
+    }
+  });
+
+  const normalizedContact = {
+    id: "caller",
+    name: "Nova",
+    handle: "@nova",
+    portrait: "portrait.webp",
+    ringtone: "ring.ogg",
+    message: "Answer?",
+    volume: 0.25
+  };
+
+  assert.deepEqual(audioCalls, [[
+    {
+      src: "ring.ogg",
+      volume: 0.25,
+      autoplay: true,
+      loop: false
+    },
+    false
+  ]]);
+  assert.deepEqual(templates, [[
+    "modules/foundry-commlink-caller/templates/incoming-call.hbs",
+    { contact: normalizedContact }
+  ]]);
+  assert.equal(dialogs.length, 1);
+  assert.deepEqual(dialogs[0].options, {
+    window: {
+      title: "Incoming Commlink Call"
+    },
+    content: "<section class=\"commlink-caller-incoming\">Incoming</section>",
+    buttons: [{
+      action: "dismiss",
+      label: "Dismiss",
+      default: true
+    }]
+  });
+  assert.deepEqual(dialogs[0].renderOptions, { force: true });
+
+  globalThis.game.user.isGM = true;
+
+  await globalThis.CommlinkCaller.receiveSocketMessage({
+    type: "incoming-call",
+    contact: { id: "gm", name: "GM" }
+  });
+
+  assert.equal(audioCalls.length, 1);
+  assert.equal(dialogs.length, 1);
+});
+
+test("playRingtone skips missing sounds and logs playback failures", async () => {
+  const errors = [];
+  const originalWarn = globalThis.console.warn;
+
+  globalThis.foundry.audio = {
+    AudioHelper: {
+      play: async () => {
+        throw new Error("no speaker");
+      }
+    }
+  };
+  globalThis.console = Object.assign(globalThis.console, {
+    warn: (...args) => errors.push(args)
+  });
+
+  try {
+    await globalThis.CommlinkCaller.playRingtone({ name: "Silent", ringtone: "" });
+    await globalThis.CommlinkCaller.playRingtone({
+      name: "Noisy",
+      ringtone: "bad.ogg",
+      volume: 0.3
+    });
+  } finally {
+    globalThis.console.warn = originalWarn;
+  }
+
+  assert.equal(errors.length, 1);
+  assert.equal(errors[0][0], "Commlink Caller failed to play ringtone.");
 });
