@@ -1,4 +1,4 @@
-<section class="commlink-caller-manager">
+<section class="commlink-caller-manager" data-contact-drop-zone>
   <header class="commlink-caller-manager__header">
     <div>
       <p class="commlink-caller-manager__eyebrow">Commlink directory</p>
@@ -31,7 +31,12 @@
     </div>
   </section>
 
-  <ol class="commlink-caller-manager__list">
+  <div class="commlink-caller-manager__drop-zone" data-contact-drop-zone>
+    <i class="fas fa-user-plus" aria-hidden="true"></i>
+    <span>Drop an actor here to create a contact.</span>
+  </div>
+
+  <ol class="commlink-caller-manager__list" data-contact-drop-zone>
     {{#if isCreating}}
       <li class="commlink-caller-contact commlink-caller-contact--editing">
         <form data-contact-form>

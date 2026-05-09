@@ -2,7 +2,7 @@
 
 Commlink Caller is a lightweight Foundry VTT v13/v14 community module for GM-run commlink calls.
 
-GMs configure world-level contacts with a name, handle, portrait, and message. From the contact manager, the GM can call all players, selected players, or themself for testing. The recipient sees an incoming commlink prompt with a phone frame, contact portrait, caller details, ringtone selector, and answer/dismiss controls while their chosen ringtone plays when browser audio is unlocked.
+GMs configure world-level contacts with a name, handle, portrait, and message. Contacts can be created manually, or by dropping an Actor from the Actors sidebar or a compendium onto the contact manager. From the contact manager, the GM can call all players, selected players, or themself for testing. The recipient sees an incoming commlink prompt with a phone frame, contact portrait, caller details, ringtone selector, and answer/dismiss controls while their chosen ringtone plays when browser audio is unlocked.
 
 ## Install
 
@@ -21,9 +21,10 @@ For local development, copy or symlink this repository folder into Foundry's `Da
 1. As the GM, open **Configure Settings** for the world and confirm **Commlink Caller** is enabled.
 2. Open the Contact Manager from the scene controls, or from **Configure Settings** > **Commlink contacts**.
 3. Add or edit contacts, then save each contact's name, handle, portrait, message, and call volume.
-4. Choose one or more recipients from the pill selector above the contact list. **Select players** toggles player recipients only; the GM test recipient is selected manually.
-5. Click **Call** on a saved contact to ring the selected recipients and show the incoming commlink screen.
-6. Watch Foundry notifications for ringing, answered, or dismissed status.
+4. To create a contact from an Actor, drag an Actor from the sidebar or a compendium and drop it on the contact manager. Commlink Caller copies the Actor's name and portrait, saves a new contact, and opens it for editing.
+5. Choose one or more recipients from the pill selector above the contact list. **Select players** toggles player recipients only; the GM test recipient is selected manually.
+6. Click **Call** on a saved contact to ring the selected recipients and show the incoming commlink screen.
+7. Watch Foundry notifications for ringing, answered, or dismissed status.
 
 GMs see a short welcome tutorial when **Show welcome screen** is enabled in Commlink Caller's settings. Leave **Don't show this again on my next login** checked to turn that setting off after the tutorial closes, or uncheck it before closing to see it again next time. Players never see this welcome screen.
 

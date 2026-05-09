@@ -211,7 +211,7 @@ body[data-theme="dark"] .commlink-caller-incoming-dialog {
 
 .commlink-caller-manager {
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-rows: auto auto auto minmax(0, 1fr);
   gap: var(--commlink-space-3);
   height: 100%;
   min-height: 0;
@@ -389,6 +389,42 @@ body[data-theme="dark"] .commlink-caller-incoming-dialog {
   background: var(--commlink-color-accent-hot);
   opacity: 1;
   transform: scale(1.55);
+}
+
+.commlink-caller-manager__drop-zone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--commlink-space-2);
+  min-height: 3rem;
+  padding: var(--commlink-space-3);
+  border: 1px dashed color-mix(in srgb, var(--commlink-color-accent) 46%, var(--commlink-color-border));
+  border-radius: var(--commlink-radius-lg);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--commlink-color-accent) 10%, transparent), transparent 62%),
+    color-mix(in srgb, var(--commlink-color-surface) 74%, transparent);
+  color: var(--commlink-color-muted);
+  font-size: 0.82rem;
+  font-weight: 720;
+  text-align: center;
+  transition:
+    border-color 420ms var(--commlink-ease-soft),
+    box-shadow 520ms var(--commlink-ease-spring),
+    color 420ms var(--commlink-ease-soft),
+    transform 520ms var(--commlink-ease-spring);
+}
+
+.commlink-caller-manager__drop-zone i {
+  color: var(--commlink-color-accent);
+}
+
+.commlink-caller-manager.is-drop-active .commlink-caller-manager__drop-zone {
+  border-color: color-mix(in srgb, var(--commlink-color-accent) 78%, var(--commlink-color-accent-hot));
+  color: var(--commlink-color-text);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--commlink-color-accent-hot) 20%, transparent),
+    0 0.9rem 2rem color-mix(in srgb, var(--commlink-color-accent) 16%, transparent);
+  transform: translateY(-1px);
 }
 
 .commlink-caller-manager__list {

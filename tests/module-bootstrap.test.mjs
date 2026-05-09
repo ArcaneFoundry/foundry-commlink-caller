@@ -11,7 +11,7 @@ test("module manifest advertises v13/v14 compatibility and loads contact model f
   const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
 
   assert.equal(manifest.id, "foundry-commlink-caller");
-  assert.equal(manifest.version, "1.0.0");
+  assert.equal(manifest.version, "1.0.2");
   assert.equal(manifest.compatibility.minimum, "13");
   assert.equal(manifest.compatibility.verified, "14");
   assert.equal(manifest.compatibility.maximum, "14");
@@ -21,13 +21,13 @@ test("module manifest advertises v13/v14 compatibility and loads contact model f
   assert.equal(manifest.bugs, "https://github.com/ArcaneFoundry/foundry-commlink-caller/issues");
   assert.equal(manifest.socket, true);
   assert.equal(manifest.manifest, "https://github.com/ArcaneFoundry/foundry-commlink-caller/releases/latest/download/module.json");
-  assert.equal(manifest.download, "https://github.com/ArcaneFoundry/foundry-commlink-caller/releases/download/v1.0.0/foundry-commlink-caller-v1.0.0.zip");
+  assert.equal(manifest.download, "https://github.com/ArcaneFoundry/foundry-commlink-caller/releases/download/v1.0.2/foundry-commlink-caller-v1.0.2.zip");
   assert.deepEqual(manifest.scripts, [
     "scripts/contact-model.js",
     "scripts/module.js"
   ]);
   assert.equal(packageJson.name, "foundry-commlink-caller");
-  assert.equal(packageJson.version, "1.0.0");
+  assert.equal(packageJson.version, "1.0.2");
   assert.equal(packageJson.license, "MIT");
 });
 
@@ -482,6 +482,8 @@ test("contact manager template keeps ids internal and exposes FilePicker buttons
   assert.equal(template.includes("data-action=\"toggle-all-targets\""), true);
   assert.equal(template.includes("{{#if allPlayerTargetsSelected}}"), true);
   assert.equal(template.includes("{{#if isSelf}}is-self{{/if}}"), true);
+  assert.equal(template.includes("data-contact-drop-zone"), true);
+  assert.equal(template.includes("Drop an actor here to create a contact."), true);
   assert.equal(template.includes("data-contact-target=\"{{id}}\""), false);
   assert.equal(template.includes("{{#each callTargets}}"), true);
   assert.equal(template.includes("multiple size=\"4\""), false);
@@ -505,6 +507,8 @@ test("module stylesheet defines a theme-aware design system", async () => {
   assert.equal(css.includes("body.theme-light .commlink-caller-contact-manager"), true);
   assert.equal(css.includes("@media (prefers-color-scheme: dark)"), true);
   assert.equal(css.includes(".commlink-caller-manager__targets"), true);
+  assert.equal(css.includes(".commlink-caller-manager__drop-zone"), true);
+  assert.equal(css.includes(".commlink-caller-manager.is-drop-active .commlink-caller-manager__drop-zone"), true);
   assert.equal(css.includes("--commlink-ease-spring"), true);
   assert.equal(css.includes(".commlink-caller-target-pill.is-selected::before"), true);
   assert.equal(css.includes(".commlink-caller-target-pill.is-self"), true);
@@ -605,6 +609,178 @@ test("contact manager file buttons delegate to Foundry FilePicker.fromButton", a
   } finally {
     if (originalHTMLButtonElement) globalThis.HTMLButtonElement = originalHTMLButtonElement;
     else delete globalThis.HTMLButtonElement;
+  }
+});
+
+test("contact manager binds native DragDrop to actor drop zones", () => {
+  const boundDragDrops = [];
+  const originalUx = globalThis.foundry.applications.ux;
+  const dropElement = {
+    classList: {
+      add: () => {},
+      remove: () => {}
+    }
+  };
+
+  globalThis.foundry.applications.ux = {
+    DragDrop: class DragDrop {
+      constructor(config) {
+        this.config = config;
+      }
+
+      bind(element) {
+        boundDragDrops.push({ element, config: this.config });
+
+        return this;
+      }
+    }
+  };
+  globalThis.game = {
+    user: { isGM: true }
+  };
+
+  try {
+    const manager = new globalThis.CommlinkCaller.ContactManager();
+    const element = {
+      querySelector: (selector) => selector === ".commlink-caller-manager" ? dropElement : null,
+      querySelectorAll: () => []
+    };
+
+    manager.element = element;
+    manager._onRender({}, {});
+
+    assert.equal(boundDragDrops.length, 1);
+    assert.equal(boundDragDrops[0].element, element);
+    assert.equal(boundDragDrops[0].config.dropSelector, "[data-contact-drop-zone]");
+    assert.equal(boundDragDrops[0].config.permissions.drop(), true);
+    assert.equal(typeof boundDragDrops[0].config.callbacks.drop, "function");
+  } finally {
+    if (originalUx) globalThis.foundry.applications.ux = originalUx;
+    else delete globalThis.foundry.applications.ux;
+  }
+});
+
+test("dropping an actor creates a contact from its name and portrait", async () => {
+  const savedSettings = [];
+  const originalUx = globalThis.foundry.applications.ux;
+  const originalFoundryUtils = globalThis.foundry.utils;
+  const originalFromUuid = globalThis.fromUuid;
+
+  globalThis.foundry.applications.ux = {
+    TextEditor: {
+      getDragEventData: () => ({
+        type: "Actor",
+        uuid: "Compendium.world.contacts.Actor.contact-actor"
+      })
+    }
+  };
+  globalThis.foundry.utils = Object.assign({}, originalFoundryUtils, {
+    randomID: () => "dropped-contact"
+  });
+  globalThis.fromUuid = async (uuid) => {
+    assert.equal(uuid, "Compendium.world.contacts.Actor.contact-actor");
+
+    return {
+      documentName: "Actor",
+      name: "Captain Halley",
+      img: "",
+      prototypeToken: {
+        texture: {
+          src: "captain-token.webp"
+        }
+      }
+    };
+  };
+  globalThis.game = {
+    user: { isGM: true },
+    settings: {
+      get: (moduleId, setting) => {
+        assert.equal(moduleId, "foundry-commlink-caller");
+        assert.equal(setting, "contacts");
+
+        return [];
+      },
+      set: async (...args) => savedSettings.push(args)
+    }
+  };
+
+  try {
+    const manager = new globalThis.CommlinkCaller.ContactManager();
+    manager.element = { querySelector: () => null };
+
+    await manager._onDropActor({
+      preventDefault: () => {}
+    });
+
+    assert.deepEqual(savedSettings, [[
+      "foundry-commlink-caller",
+      "contacts",
+      [{
+        id: "dropped-contact",
+        name: "Captain Halley",
+        handle: "",
+        portrait: "captain-token.webp",
+        ringtone: "",
+        message: "Incoming call",
+        volume: 0.8
+      }]
+    ]]);
+    assert.equal(manager._editingContactId, "dropped-contact");
+    assert.equal(manager.renderCount, 1);
+    assert.deepEqual(manager.renderOptions, { force: true });
+  } finally {
+    if (originalUx) globalThis.foundry.applications.ux = originalUx;
+    else delete globalThis.foundry.applications.ux;
+    if (originalFoundryUtils) globalThis.foundry.utils = originalFoundryUtils;
+    else delete globalThis.foundry.utils;
+    if (originalFromUuid) globalThis.fromUuid = originalFromUuid;
+    else delete globalThis.fromUuid;
+  }
+});
+
+test("contact manager rejects non-actor drops without saving contacts", async () => {
+  const warnings = [];
+  const savedSettings = [];
+  const originalUx = globalThis.foundry.applications.ux;
+  const originalUi = globalThis.ui;
+
+  globalThis.foundry.applications.ux = {
+    TextEditor: {
+      getDragEventData: () => ({
+        type: "Item",
+        uuid: "Item.item-id"
+      })
+    }
+  };
+  globalThis.game = {
+    user: { isGM: true },
+    settings: {
+      get: () => [],
+      set: async (...args) => savedSettings.push(args)
+    }
+  };
+  globalThis.ui = {
+    notifications: {
+      warn: (message) => warnings.push(message)
+    }
+  };
+
+  try {
+    const manager = new globalThis.CommlinkCaller.ContactManager();
+    manager.element = { querySelector: () => null };
+
+    await manager._onDropActor({
+      preventDefault: () => {}
+    });
+
+    assert.deepEqual(savedSettings, []);
+    assert.deepEqual(warnings, ["Drop an Actor to create a commlink contact."]);
+    assert.equal(manager.renderCount, 0);
+  } finally {
+    if (originalUx) globalThis.foundry.applications.ux = originalUx;
+    else delete globalThis.foundry.applications.ux;
+    if (originalUi) globalThis.ui = originalUi;
+    else delete globalThis.ui;
   }
 });
 

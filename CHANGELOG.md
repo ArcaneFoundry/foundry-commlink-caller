@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.2
+
+- Added GM drag-and-drop support for Actors in the contact manager.
+- Dropping an Actor from the sidebar or a compendium now creates a contact from the Actor's name and portrait, then opens it for editing.
+- Added a visible actor drop zone and active drag styling to the contact manager.
+
 ## 1.0.0
 
 - Added GM-managed commlink contacts with portrait, handle, message, and call volume.
