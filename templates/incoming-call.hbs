@@ -1,22 +1,55 @@
 <section class="commlink-caller-incoming">
   <div class="commlink-caller-phone {{frameClass}}" data-phone-frame="{{frame}}">
+    <button class="commlink-caller-phone__close" type="button" data-action="dismiss-call" aria-label="Close commlink">
+      <i class="fas fa-xmark" aria-hidden="true"></i>
+    </button>
     <div class="commlink-caller-phone__speaker" aria-hidden="true"></div>
+    <label class="commlink-caller-phone__ringtone-control" title="Ringtone">
+      <i class="fas fa-music" aria-hidden="true"></i>
+      <select class="commlink-caller-phone__ringtone" data-action="change-ringtone" aria-label="Ringtone">
+        {{#each ringtonePresets}}
+          <option value="{{path}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+        {{/each}}
+      </select>
+    </label>
     <div class="commlink-caller-phone__screen">
       {{#if contact.portrait}}
         <img src="{{contact.portrait}}" alt="{{contact.name}}" loading="lazy">
       {{else}}
         <i class="fas fa-satellite-dish" aria-hidden="true"></i>
       {{/if}}
+      <div class="commlink-caller-phone__caller">
+        <p class="commlink-caller-phone__eyebrow">Incoming call</p>
+        <p class="commlink-caller-phone__target">For {{targetName}}</p>
+        <h2>{{contact.name}}</h2>
+        {{#if contact.handle}}
+          <p class="commlink-caller-phone__handle">{{contact.handle}}</p>
+        {{/if}}
+      </div>
     </div>
-    <div class="commlink-caller-phone__caller">
-      <p class="commlink-caller-phone__eyebrow">Incoming call</p>
-      <p class="commlink-caller-phone__target">For {{targetName}}</p>
-      <h2>{{contact.name}}</h2>
-      {{#if contact.handle}}
-        <p class="commlink-caller-phone__handle">{{contact.handle}}</p>
-      {{/if}}
-      <p class="commlink-caller-phone__message">{{contact.message}}</p>
+    {{#if hasPhoneFrame}}
+    <div class="commlink-caller-phone__actions">
+      <button type="button" data-action="answer-call">
+        <i class="fas fa-phone" aria-hidden="true"></i>
+        Answer
+      </button>
+      <button type="button" data-action="dismiss-call">
+        <i class="fas fa-phone-slash" aria-hidden="true"></i>
+        Dismiss
+      </button>
     </div>
     <div class="commlink-caller-phone__button" aria-hidden="true"></div>
+    {{else}}
+    <div class="commlink-caller-phone__actions">
+      <button type="button" data-action="answer-call">
+        <i class="fas fa-phone" aria-hidden="true"></i>
+        Answer
+      </button>
+      <button type="button" data-action="dismiss-call">
+        <i class="fas fa-phone-slash" aria-hidden="true"></i>
+        Dismiss
+      </button>
+    </div>
+    {{/if}}
   </div>
 </section>

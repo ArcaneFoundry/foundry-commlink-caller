@@ -1,8 +1,126 @@
-.commlink-caller-contact-manager .window-content {
-  padding: 0.75rem;
+.commlink-caller-contact-manager,
+.commlink-caller-welcome,
+.commlink-caller-incoming-dialog {
+  --commlink-font-sans: "Satoshi", "Geist", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --commlink-font-mono: "JetBrains Mono", "SFMono-Regular", ui-monospace, monospace;
+  --commlink-space-1: 0.25rem;
+  --commlink-space-2: 0.5rem;
+  --commlink-space-3: 0.75rem;
+  --commlink-space-4: 1rem;
+  --commlink-space-5: 1.25rem;
+  --commlink-space-6: 1.5rem;
+  --commlink-radius-sm: 0.35rem;
+  --commlink-radius-md: 0.55rem;
+  --commlink-radius-lg: 0.8rem;
+  --commlink-ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
+  --commlink-ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --commlink-color-bg: #f5f2eb;
+  --commlink-color-surface: rgba(255, 252, 245, 0.92);
+  --commlink-color-surface-2: rgba(233, 228, 216, 0.72);
+  --commlink-color-text: #202521;
+  --commlink-color-muted: #68716c;
+  --commlink-color-border: rgba(64, 74, 68, 0.22);
+  --commlink-color-accent: #2f8f83;
+  --commlink-color-accent-strong: #176a61;
+  --commlink-color-accent-hot: #d7b56d;
+  --commlink-color-ink: rgba(10, 15, 14, 0.86);
+  --commlink-shadow-soft: 0 1rem 2.25rem rgba(35, 42, 38, 0.14);
+  --commlink-shadow-lifted: 0 1.4rem 3.2rem rgba(18, 26, 23, 0.18), 0 0.18rem 0.7rem rgba(47, 143, 131, 0.13);
+  --commlink-shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.18), inset 0 -1px 0 rgba(10, 14, 13, 0.08);
+  --commlink-focus: 0 0 0 2px rgba(47, 143, 131, 0.35);
+  color: var(--commlink-color-text);
+  font-family: var(--commlink-font-sans);
+  font-size: 0.92rem;
+  line-height: 1.45;
 }
 
-.commlink-caller-incoming-dialog .window-header .window-title {
+body.theme-light .commlink-caller-contact-manager,
+body.theme-light .commlink-caller-welcome,
+body.theme-light .commlink-caller-incoming-dialog,
+body[data-theme="light"] .commlink-caller-contact-manager,
+body[data-theme="light"] .commlink-caller-welcome,
+body[data-theme="light"] .commlink-caller-incoming-dialog {
+  --commlink-color-bg: #f5f2eb;
+  --commlink-color-surface: rgba(255, 252, 245, 0.92);
+  --commlink-color-surface-2: rgba(233, 228, 216, 0.72);
+  --commlink-color-text: #202521;
+  --commlink-color-muted: #68716c;
+  --commlink-color-border: rgba(64, 74, 68, 0.22);
+  --commlink-shadow-soft: 0 1rem 2.25rem rgba(35, 42, 38, 0.14);
+  --commlink-shadow-lifted: 0 1.4rem 3.2rem rgba(18, 26, 23, 0.18), 0 0.18rem 0.7rem rgba(47, 143, 131, 0.13);
+  --commlink-shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.2), inset 0 -1px 0 rgba(10, 14, 13, 0.08);
+}
+
+body.theme-dark .commlink-caller-contact-manager,
+body.theme-dark .commlink-caller-welcome,
+body.theme-dark .commlink-caller-incoming-dialog,
+body[data-theme="dark"] .commlink-caller-contact-manager,
+body[data-theme="dark"] .commlink-caller-welcome,
+body[data-theme="dark"] .commlink-caller-incoming-dialog {
+  --commlink-color-bg: #111715;
+  --commlink-color-surface: rgba(24, 31, 29, 0.9);
+  --commlink-color-surface-2: rgba(39, 49, 46, 0.76);
+  --commlink-color-text: #f1eee6;
+  --commlink-color-muted: #a6b0aa;
+  --commlink-color-border: rgba(221, 232, 226, 0.16);
+  --commlink-shadow-soft: 0 1rem 2.5rem rgba(7, 10, 9, 0.38);
+  --commlink-shadow-lifted: 0 1.5rem 3.4rem rgba(0, 0, 0, 0.42), 0 0 2.4rem rgba(47, 143, 131, 0.1);
+  --commlink-shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.11), inset 0 -1px 0 rgba(0, 0, 0, 0.42);
+}
+
+@media (prefers-color-scheme: dark) {
+  .commlink-caller-contact-manager,
+  .commlink-caller-welcome,
+  .commlink-caller-incoming-dialog {
+    --commlink-color-bg: #111715;
+    --commlink-color-surface: rgba(24, 31, 29, 0.9);
+    --commlink-color-surface-2: rgba(39, 49, 46, 0.76);
+    --commlink-color-text: #f1eee6;
+    --commlink-color-muted: #a6b0aa;
+    --commlink-color-border: rgba(221, 232, 226, 0.16);
+    --commlink-shadow-soft: 0 1rem 2.5rem rgba(7, 10, 9, 0.38);
+    --commlink-shadow-lifted: 0 1.5rem 3.4rem rgba(0, 0, 0, 0.42), 0 0 2.4rem rgba(47, 143, 131, 0.1);
+    --commlink-shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.11), inset 0 -1px 0 rgba(0, 0, 0, 0.42);
+  }
+}
+
+.commlink-caller-contact-manager .window-content,
+.commlink-caller-welcome .window-content {
+  padding: var(--commlink-space-4);
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--commlink-color-surface) 92%, transparent), transparent 140%),
+    linear-gradient(45deg, color-mix(in srgb, var(--commlink-color-accent) 10%, transparent), transparent 42%),
+    linear-gradient(180deg, color-mix(in srgb, var(--commlink-color-accent-hot) 8%, transparent), transparent 54%),
+    var(--commlink-color-bg);
+  color: var(--commlink-color-text);
+}
+
+.commlink-caller-contact-manager .window-content {
+  overflow: hidden;
+}
+
+.commlink-caller-contact-manager .window-header,
+.commlink-caller-welcome .window-header {
+  display: flex;
+  border-bottom-color: var(--commlink-color-border);
+  color: var(--commlink-color-text);
+  font-family: var(--commlink-font-sans);
+}
+
+.commlink-caller-contact-manager .window-header .window-title,
+.commlink-caller-welcome .window-header .window-title {
+  flex: 1;
+  font-size: 0.82rem;
+  font-weight: 750;
+  letter-spacing: 0;
+}
+
+.commlink-caller-contact-manager .window-header .window-controls,
+.commlink-caller-welcome .window-header .window-controls {
+  margin-left: auto;
+}
+
+.commlink-caller-incoming-dialog .window-header {
   display: none;
 }
 
@@ -10,15 +128,98 @@
   position: relative;
   padding: 0;
   overflow: hidden;
+  background: transparent;
+}
+
+.commlink-caller-incoming-dialog .dialog-buttons {
+  display: none;
+}
+
+.commlink-caller-contact-manager .window-content button,
+.commlink-caller-welcome .window-content button,
+.commlink-caller-phone button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2rem;
+  border: 1px solid color-mix(in srgb, var(--commlink-color-accent) 34%, var(--commlink-color-border));
+  border-radius: var(--commlink-radius-sm);
+  background: color-mix(in srgb, var(--commlink-color-surface) 80%, var(--commlink-color-accent) 8%);
+  color: var(--commlink-color-text);
+  font-family: var(--commlink-font-sans);
+  font-size: 0.82rem;
+  font-weight: 740;
+  letter-spacing: 0;
+  transition:
+    background 420ms var(--commlink-ease-soft),
+    border-color 420ms var(--commlink-ease-soft),
+    box-shadow 520ms var(--commlink-ease-spring),
+    transform 520ms var(--commlink-ease-spring),
+    color 420ms var(--commlink-ease-soft);
+}
+
+.commlink-caller-contact-manager .window-content button:hover,
+.commlink-caller-welcome .window-content button:hover,
+.commlink-caller-phone button:hover {
+  border-color: color-mix(in srgb, var(--commlink-color-accent) 62%, var(--commlink-color-border));
+  background: color-mix(in srgb, var(--commlink-color-surface) 68%, var(--commlink-color-accent) 14%);
+}
+
+.commlink-caller-contact-manager .window-content button:active,
+.commlink-caller-welcome .window-content button:active,
+.commlink-caller-phone button:active {
+  transform: translateY(1px) scale(0.99);
+}
+
+.commlink-caller-contact-manager .window-content button:focus-visible,
+.commlink-caller-welcome .window-content button:focus-visible,
+.commlink-caller-phone button:focus-visible,
+.commlink-caller-contact-manager input:focus-visible,
+.commlink-caller-contact-manager textarea:focus-visible,
+.commlink-caller-contact-manager select:focus-visible,
+.commlink-caller-phone select:focus-visible {
+  outline: none;
+  box-shadow: var(--commlink-focus);
+}
+
+.commlink-caller-contact-manager input,
+.commlink-caller-contact-manager textarea,
+.commlink-caller-contact-manager select {
+  width: 100%;
+  border: 1px solid var(--commlink-color-border);
+  border-radius: var(--commlink-radius-sm);
+  background: color-mix(in srgb, var(--commlink-color-surface) 86%, transparent);
+  color: var(--commlink-color-text);
+  font-family: var(--commlink-font-sans);
+  font-size: 0.86rem;
+}
+
+.commlink-caller-contact-manager input,
+.commlink-caller-contact-manager select {
+  min-height: 2.1rem;
+}
+
+.commlink-caller-contact-manager textarea {
+  resize: vertical;
+}
+
+.commlink-caller-contact-manager input[type="range"] {
+  accent-color: var(--commlink-color-accent);
+  min-height: 1.6rem;
 }
 
 .commlink-caller-manager {
   display: grid;
-  gap: 0.75rem;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: var(--commlink-space-3);
+  height: 100%;
+  min-height: 0;
 }
 
 .commlink-caller-manager__header,
-.commlink-caller-contact,
+.commlink-caller-manager__target-header,
+.commlink-caller-contact__row,
 .commlink-caller-contact__actions,
 .commlink-caller-editor__actions {
   display: flex;
@@ -27,50 +228,233 @@
 
 .commlink-caller-manager__header {
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: var(--commlink-space-3);
+  padding: var(--commlink-space-2) var(--commlink-space-1) var(--commlink-space-1);
+}
+
+.commlink-caller-manager__eyebrow {
+  margin: 0 0 0.15rem;
+  color: var(--commlink-color-accent-strong);
+  font-family: var(--commlink-font-mono);
+  font-size: 0.62rem;
+  font-weight: 840;
+  letter-spacing: 0.13em;
+  line-height: 1;
+  text-transform: uppercase;
 }
 
 .commlink-caller-manager__title {
   margin: 0;
-  font-size: 1.1rem;
+  color: var(--commlink-color-text);
+  font-size: 1.22rem;
+  font-weight: 860;
+  letter-spacing: 0;
+  line-height: 1.1;
 }
 
-.commlink-caller-manager__body {
+.commlink-caller-manager__targets {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.85rem;
-  min-height: 0;
+  gap: var(--commlink-space-2);
+  padding: var(--commlink-space-2);
+  border: 1px solid var(--commlink-color-border);
+  border-radius: calc(var(--commlink-radius-lg) + 0.35rem);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--commlink-color-accent) 15%, transparent), transparent 64%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent),
+    var(--commlink-color-surface);
+  box-shadow: var(--commlink-shadow-lifted), var(--commlink-shadow-inset);
+  backdrop-filter: blur(0.75rem);
+}
+
+.commlink-caller-manager__target-header {
+  justify-content: space-between;
+  gap: var(--commlink-space-3);
+  padding: var(--commlink-space-1) var(--commlink-space-1) 0;
+}
+
+.commlink-caller-manager__target-header h3 {
+  margin: 0;
+  color: var(--commlink-color-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.commlink-caller-manager__target-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--commlink-space-2);
+  padding: var(--commlink-space-2);
+  border: 1px solid color-mix(in srgb, var(--commlink-color-border) 72%, transparent);
+  border-radius: var(--commlink-radius-lg);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--commlink-color-ink) 9%, transparent), transparent 70%),
+    color-mix(in srgb, var(--commlink-color-surface-2) 70%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.commlink-caller-target-pill,
+.commlink-caller-manager__target-header button {
+  position: relative;
+  overflow: hidden;
+  border-radius: 999px;
+}
+
+.commlink-caller-target-pill {
+  isolation: isolate;
+  min-height: 2.15rem;
+  padding: 0.28rem 0.78rem 0.28rem 0.34rem;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--commlink-color-surface) 92%, transparent), color-mix(in srgb, var(--commlink-color-surface-2) 74%, transparent));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 0.4rem 1rem rgba(8, 12, 11, 0.08);
+}
+
+.commlink-caller-target-pill__signal {
+  position: relative;
+  z-index: 1;
+  display: inline-grid;
+  place-items: center;
+  width: 1.18rem;
+  height: 1.18rem;
+  border: 1px solid color-mix(in srgb, var(--commlink-color-border) 80%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--commlink-color-surface) 88%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+
+.commlink-caller-target-pill__signal::after {
+  content: "";
+  width: 0.34rem;
+  height: 0.34rem;
+  border-radius: 999px;
+  background: var(--commlink-color-muted);
+  opacity: 0.42;
+  transform: scale(0.82);
+  transition:
+    background 520ms var(--commlink-ease-soft),
+    opacity 520ms var(--commlink-ease-soft),
+    transform 520ms var(--commlink-ease-spring);
+}
+
+.commlink-caller-target-pill__label {
+  position: relative;
+  z-index: 1;
+}
+
+.commlink-caller-target-pill.is-self {
+  border-style: dashed;
+}
+
+.commlink-caller-target-pill.is-self:not(.is-selected) {
+  color: color-mix(in srgb, var(--commlink-color-muted) 88%, var(--commlink-color-text));
+}
+
+.commlink-caller-target-pill.is-selected::before {
+  content: "";
+  position: absolute;
+  inset: -0.3rem;
+  z-index: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--commlink-color-accent) 86%, transparent), color-mix(in srgb, var(--commlink-color-accent-hot) 68%, transparent));
+  filter: blur(0.6rem);
+  opacity: 0.72;
+}
+
+.commlink-caller-target-pill.is-selected,
+.commlink-caller-manager__target-header button.is-selected {
+  border-color: color-mix(in srgb, var(--commlink-color-accent) 72%, var(--commlink-color-accent-hot));
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--commlink-color-accent) 42%, var(--commlink-color-surface)), color-mix(in srgb, var(--commlink-color-accent-hot) 20%, var(--commlink-color-surface)));
+  color: var(--commlink-color-text);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 0.72rem 1.65rem color-mix(in srgb, var(--commlink-color-accent) 24%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--commlink-color-accent-hot) 18%, transparent);
+  transform: translateY(-1px);
+}
+
+.commlink-caller-target-pill.is-selected .commlink-caller-target-pill__signal {
+  border-color: color-mix(in srgb, var(--commlink-color-accent-hot) 70%, var(--commlink-color-accent));
+  background: color-mix(in srgb, var(--commlink-color-ink) 82%, var(--commlink-color-accent));
+}
+
+.commlink-caller-target-pill.is-selected .commlink-caller-target-pill__signal::after {
+  background: var(--commlink-color-accent-hot);
+  opacity: 1;
+  transform: scale(1.55);
 }
 
 .commlink-caller-manager__list {
+  min-height: 0;
   display: grid;
-  gap: 0.5rem;
+  gap: var(--commlink-space-2);
   align-content: start;
   margin: 0;
   padding: 0;
   max-height: 27rem;
   overflow-y: auto;
   list-style: none;
+  scrollbar-color: color-mix(in srgb, var(--commlink-color-accent) 38%, transparent) transparent;
 }
 
 .commlink-caller-contact {
-  gap: 0.65rem;
-  padding: 0.55rem;
-  border: 1px solid var(--color-border-light-tertiary, #c9c7bd);
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.35);
+  padding: var(--commlink-space-2);
+  border: 1px solid color-mix(in srgb, var(--commlink-color-border) 84%, transparent);
+  border-radius: var(--commlink-radius-lg);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--commlink-color-surface) 92%, transparent), color-mix(in srgb, var(--commlink-color-surface-2) 74%, transparent)),
+    var(--commlink-color-surface);
+  box-shadow:
+    var(--commlink-shadow-inset),
+    0 0.55rem 1.4rem rgba(8, 12, 11, 0.08);
+  transition:
+    border-color 520ms var(--commlink-ease-soft),
+    box-shadow 620ms var(--commlink-ease-spring),
+    transform 620ms var(--commlink-ease-spring);
+}
+
+.commlink-caller-contact:hover {
+  border-color: color-mix(in srgb, var(--commlink-color-accent) 44%, var(--commlink-color-border));
+  box-shadow:
+    var(--commlink-shadow-inset),
+    0 0.9rem 2rem rgba(8, 12, 11, 0.12);
+  transform: translateY(-1px);
+}
+
+.commlink-caller-contact--editing {
+  display: grid;
+  gap: var(--commlink-space-3);
+  box-shadow: var(--commlink-shadow-soft);
+}
+
+.commlink-caller-contact__row {
+  gap: var(--commlink-space-3);
+  min-height: 3.25rem;
 }
 
 .commlink-caller-contact__portrait {
   display: grid;
   place-items: center;
-  flex: 0 0 2.5rem;
-  width: 2.5rem;
-  height: 2.5rem;
+  flex: 0 0 2.75rem;
+  width: 2.75rem;
+  height: 2.75rem;
   overflow: hidden;
-  border-radius: 4px;
-  background: rgba(20, 20, 20, 0.08);
-  color: var(--color-text-dark-secondary, #4b4a44);
+  border: 1px solid var(--commlink-color-border);
+  border-radius: calc(var(--commlink-radius-md) + 0.15rem);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--commlink-color-accent) 16%, transparent), transparent),
+    var(--commlink-color-surface-2);
+  color: var(--commlink-color-muted);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 0.32rem 0.9rem rgba(8, 12, 11, 0.12);
 }
 
 .commlink-caller-contact__portrait img {
@@ -81,7 +465,7 @@
 
 .commlink-caller-contact__summary {
   display: grid;
-  gap: 0.15rem;
+  gap: 0.12rem;
   min-width: 0;
   flex: 1;
 }
@@ -93,88 +477,101 @@
   white-space: nowrap;
 }
 
+.commlink-caller-contact__summary strong {
+  color: var(--commlink-color-text);
+  font-size: 0.95rem;
+  font-weight: 790;
+}
+
 .commlink-caller-contact__summary span {
-  color: var(--color-text-dark-secondary, #4b4a44);
-  font-size: 0.85rem;
+  color: var(--commlink-color-muted);
+  font-family: var(--commlink-font-mono);
+  font-size: 0.73rem;
 }
 
 .commlink-caller-contact__actions {
-  gap: 0.25rem;
-  flex-wrap: wrap;
+  gap: var(--commlink-space-1);
+  flex-wrap: nowrap;
   justify-content: flex-end;
 }
 
-.commlink-caller-contact__actions select {
-  width: 9.5rem;
-}
-
-.commlink-caller-editor {
-  padding: 0.75rem;
-  border: 1px solid var(--color-border-light-primary, #b5b3a8);
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.22);
-}
-
-.commlink-caller-editor form {
+.commlink-caller-contact form {
   display: grid;
-  gap: 0.55rem;
+  gap: var(--commlink-space-3);
+  padding-top: var(--commlink-space-3);
+  border-top: 1px solid var(--commlink-color-border);
 }
 
-.commlink-caller-editor label {
+.commlink-caller-contact label {
   display: grid;
-  gap: 0.2rem;
+  gap: var(--commlink-space-1);
   margin: 0;
 }
 
-.commlink-caller-editor label span {
-  font-weight: 700;
+.commlink-caller-contact label span {
+  color: var(--commlink-color-muted);
+  font-size: 0.72rem;
+  font-weight: 780;
+  letter-spacing: 0;
+  text-transform: uppercase;
 }
 
-.commlink-caller-editor textarea {
-  resize: vertical;
+.commlink-caller-editor__identity {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: var(--commlink-space-3);
 }
 
 .commlink-caller-editor__file-field {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 2rem;
-  gap: 0.35rem;
+  grid-template-columns: minmax(0, 1fr) 2.1rem;
+  gap: var(--commlink-space-2);
   align-items: center;
 }
 
 .commlink-caller-editor__file-field button {
   display: grid;
   place-items: center;
-  width: 2rem;
-  height: 2rem;
+  width: 2.1rem;
+  height: 2.1rem;
   margin: 0;
   padding: 0;
 }
 
 .commlink-caller-editor__actions {
   justify-content: flex-end;
-  gap: 0.5rem;
-  margin-top: 0.25rem;
+  gap: var(--commlink-space-2);
+  margin-top: var(--commlink-space-1);
 }
 
 .commlink-caller-manager__empty,
 .commlink-caller-editor__empty {
   margin: 0;
-  color: var(--color-text-dark-secondary, #4b4a44);
-}
-
-.commlink-caller-welcome .window-content {
-  padding: 0.85rem;
+  padding: var(--commlink-space-5);
+  border: 1px dashed var(--commlink-color-border);
+  border-radius: var(--commlink-radius-md);
+  color: var(--commlink-color-muted);
+  text-align: center;
 }
 
 .commlink-caller-welcome__form,
 .commlink-caller-welcome__intro,
 .commlink-caller-welcome__steps {
   display: grid;
-  gap: 0.7rem;
+  gap: var(--commlink-space-3);
+}
+
+.commlink-caller-welcome__form {
+  gap: var(--commlink-space-4);
 }
 
 .commlink-caller-welcome__intro {
-  padding-bottom: 0.15rem;
+  padding: var(--commlink-space-3);
+  border: 1px solid var(--commlink-color-border);
+  border-radius: var(--commlink-radius-lg);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--commlink-color-accent) 13%, transparent), transparent 72%),
+    var(--commlink-color-surface);
 }
 
 .commlink-caller-welcome__eyebrow,
@@ -184,21 +581,37 @@
 }
 
 .commlink-caller-welcome__eyebrow {
-  color: #0b8076;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0;
+  color: var(--commlink-color-accent-strong);
+  font-family: var(--commlink-font-mono);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
 }
 
 .commlink-caller-welcome__intro h2 {
-  font-size: 1.35rem;
-  line-height: 1.2;
+  color: var(--commlink-color-text);
+  font-size: 1.45rem;
+  font-weight: 820;
+  letter-spacing: 0;
+  line-height: 1.1;
+}
+
+.commlink-caller-welcome__intro p {
+  color: var(--commlink-color-muted);
+  line-height: 1.55;
 }
 
 .commlink-caller-welcome__steps {
   margin: 0;
   padding-left: 1.35rem;
+  color: var(--commlink-color-text);
+}
+
+.commlink-caller-welcome__steps li::marker {
+  color: var(--commlink-color-accent);
+  font-family: var(--commlink-font-mono);
+  font-weight: 800;
 }
 
 .commlink-caller-welcome__preference,
@@ -208,46 +621,92 @@
 }
 
 .commlink-caller-welcome__preference {
-  gap: 0.45rem;
+  gap: var(--commlink-space-2);
+  color: var(--commlink-color-muted);
+}
+
+.commlink-caller-welcome__preference input {
+  accent-color: var(--commlink-color-accent);
 }
 
 .commlink-caller-welcome__actions {
   justify-content: flex-end;
-  gap: 0.5rem;
+  gap: var(--commlink-space-2);
 }
 
 .commlink-caller-incoming {
   display: grid;
-  min-height: 31.5rem;
+  min-height: 38.75rem;
   padding: 0;
+  background:
+    radial-gradient(circle at 50% 4%, rgba(47, 143, 131, 0.18), transparent 30%),
+    #121816;
 }
 
 .commlink-caller-phone {
+  --phone-shell: linear-gradient(145deg, #151d1b, #28322f);
+  --phone-rim: rgba(235, 242, 239, 0.2);
+  --phone-screen: rgba(10, 17, 16, 0.92);
+  --phone-accent: var(--commlink-color-accent);
+  --phone-text: #f4f0e7;
+  --phone-muted: rgba(244, 240, 231, 0.78);
+  --phone-shadow: 0 1rem 2.25rem rgba(8, 11, 10, 0.42);
   position: relative;
   width: 100%;
   height: 100%;
-  min-height: 31.5rem;
+  min-height: 38.75rem;
   aspect-ratio: 9 / 14;
   padding: 20%;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 1.2rem;
-  background: linear-gradient(145deg, #10151f, #252c38);
+  overflow: hidden;
+  border: 1px solid var(--phone-rim);
+  border-radius: 1.35rem;
+  background: var(--phone-shell);
   box-shadow:
-    inset 0 0 0 0.22rem rgba(255, 255, 255, 0.08),
-    inset 0 0 1.6rem rgba(0, 0, 0, 0.5),
-    0 0.65rem 1.4rem rgba(0, 0, 0, 0.28);
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -0.35rem 1.4rem rgba(10, 14, 13, 0.34),
+    var(--phone-shadow);
+  color: var(--phone-text);
+  font-family: var(--commlink-font-sans);
+}
+
+.commlink-caller-phone::before,
+.commlink-caller-phone::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.commlink-caller-phone::before {
+  inset: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: inherit;
+}
+
+.commlink-caller-phone::after {
+  top: -24%;
+  right: -18%;
+  width: 58%;
+  height: 54%;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.13);
+  filter: blur(1.8rem);
+  opacity: 0.42;
+  transform: rotate(-18deg);
 }
 
 .commlink-caller-phone__screen {
   position: absolute;
-  inset: 20%;
+  inset: 16% 13% 14%;
   display: grid;
   place-items: center;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 0.55rem;
-  background: rgba(4, 12, 17, 0.84);
-  color: rgba(255, 255, 255, 0.72);
+  border-radius: 0.8rem;
+  background: var(--phone-screen);
+  color: var(--phone-muted);
+  box-shadow:
+    inset 0 0 0 1px rgba(7, 11, 10, 0.22),
+    inset 0 -1.2rem 2.4rem rgba(10, 14, 13, 0.34);
 }
 
 .commlink-caller-phone__screen img {
@@ -256,16 +715,61 @@
   object-fit: cover;
 }
 
+.commlink-caller-phone__screen > i {
+  color: color-mix(in srgb, var(--phone-accent) 68%, var(--phone-text));
+  font-size: 3.25rem;
+}
+
 .commlink-caller-phone__caller {
   position: absolute;
-  right: 11%;
-  bottom: 15%;
+  right: 5%;
+  bottom: 3%;
   display: grid;
   justify-items: end;
-  max-width: 72%;
-  color: #f4ead8;
+  max-width: 78%;
+  color: var(--phone-text);
   text-align: right;
-  text-shadow: 0 0.08rem 0.25rem rgba(0, 0, 0, 0.82);
+  text-shadow: 0 0.08rem 0.26rem rgba(6, 8, 8, 0.84);
+}
+
+.commlink-caller-phone__close,
+.commlink-caller-phone__ringtone-control {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  height: 2rem;
+  margin: 0;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--phone-accent) 42%, rgba(255, 255, 255, 0.16));
+  border-radius: 999px;
+  background: rgba(13, 20, 18, 0.72);
+  color: var(--phone-text);
+  backdrop-filter: blur(0.6rem);
+}
+
+.commlink-caller-phone__close {
+  top: 6%;
+  left: 8%;
+  width: 2.15rem;
+}
+
+.commlink-caller-phone__ringtone-control {
+  top: 6%;
+  right: 8%;
+  width: 2.6rem;
+}
+
+.commlink-caller-phone__ringtone {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+}
+
+.commlink-caller-phone__ringtone option {
+  color: #151a18;
 }
 
 .commlink-caller-phone__caller h2,
@@ -275,27 +779,25 @@
 
 .commlink-caller-phone__caller h2 {
   overflow-wrap: anywhere;
-  font-size: 1.85rem;
-  line-height: 1;
+  font-size: 1.72rem;
+  font-weight: 850;
+  letter-spacing: 0;
+  line-height: 0.98;
 }
 
 .commlink-caller-phone__eyebrow,
 .commlink-caller-phone__target,
-.commlink-caller-phone__handle,
-.commlink-caller-phone__message {
+.commlink-caller-phone__handle {
   overflow-wrap: anywhere;
-  font-size: 0.8rem;
+  font-size: 0.76rem;
 }
 
 .commlink-caller-phone__eyebrow {
-  color: rgba(0, 241, 215, 0.88);
-  font-weight: 700;
+  color: color-mix(in srgb, var(--phone-accent) 78%, var(--phone-text));
+  font-family: var(--commlink-font-mono);
+  font-weight: 800;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
-}
-
-.commlink-caller-phone__message {
-  margin-top: 0.2rem;
-  color: rgba(244, 234, 216, 0.86);
 }
 
 .commlink-caller-phone__speaker,
@@ -303,7 +805,7 @@
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.28);
 }
 
 .commlink-caller-phone__speaker {
@@ -314,66 +816,149 @@
 }
 
 .commlink-caller-phone__button {
-  bottom: 7.5%;
+  bottom: 2.6%;
   width: 0.75rem;
   height: 0.75rem;
   border-radius: 50%;
 }
 
 .commlink-caller-phone--cyberpunk {
-  border-color: rgba(0, 221, 196, 0.5);
-  background:
-    linear-gradient(145deg, rgba(8, 16, 30, 0.98), rgba(28, 12, 44, 0.94)),
-    #111927;
-  box-shadow:
-    inset 0 0 0 0.22rem rgba(0, 221, 196, 0.12),
-    0 0 1rem rgba(0, 221, 196, 0.3),
-    0 0.65rem 1.4rem rgba(0, 0, 0, 0.28);
+  --phone-shell:
+    linear-gradient(135deg, rgba(47, 143, 131, 0.24), transparent 36%),
+    linear-gradient(154deg, #0f1d1b, #26302d 48%, #111715);
+  --phone-rim: rgba(47, 143, 131, 0.42);
+  --phone-screen: rgba(7, 15, 14, 0.94);
+  --phone-shadow: 0 1rem 2.4rem rgba(7, 13, 12, 0.46);
+}
+
+.commlink-caller-phone--cyberpunk::before {
+  border-color: rgba(47, 143, 131, 0.24);
+  clip-path: polygon(0 0, 82% 0, 100% 13%, 100% 100%, 16% 100%, 0 86%);
 }
 
 .commlink-caller-phone--modern {
-  border-color: rgba(180, 204, 218, 0.62);
-  background: linear-gradient(145deg, #d8e2e7, #465662);
+  --phone-shell:
+    linear-gradient(145deg, #ecf0ed 0%, #a8b4af 42%, #3f4945 100%);
+  --phone-rim: rgba(231, 237, 234, 0.68);
+  --phone-screen: rgba(20, 28, 26, 0.9);
+  --phone-text: #fbf7ee;
+  --phone-shadow: 0 1rem 2.4rem rgba(33, 43, 39, 0.3);
+}
+
+.commlink-caller-phone--modern::before {
+  border-color: rgba(255, 255, 255, 0.24);
+  box-shadow: inset 0 0 0 0.18rem rgba(255, 255, 255, 0.08);
 }
 
 .commlink-caller-phone--retro {
-  border-color: rgba(245, 213, 153, 0.55);
-  border-radius: 1.55rem;
-  background: linear-gradient(145deg, #211813, #74483b);
+  --phone-shell:
+    radial-gradient(circle at 28% 12%, rgba(217, 190, 139, 0.16), transparent 24%),
+    linear-gradient(145deg, #2b211b, #704d3d 54%, #1b1512);
+  --phone-rim: rgba(226, 196, 143, 0.44);
+  --phone-screen: rgba(33, 26, 21, 0.92);
+  --phone-accent: #9f7a45;
+  --phone-shadow: 0 1rem 2.35rem rgba(25, 18, 14, 0.46);
+  border-radius: 1.7rem;
+}
+
+.commlink-caller-phone--retro::before {
+  border-color: rgba(226, 196, 143, 0.22);
+  border-radius: 1.45rem;
 }
 
 .commlink-caller-phone--corporate {
-  border-color: rgba(214, 229, 235, 0.7);
-  background: linear-gradient(145deg, #f2f5f4, #6e7a82);
+  --phone-shell:
+    linear-gradient(112deg, rgba(255, 255, 255, 0.24), transparent 28%),
+    linear-gradient(145deg, #e9ece9, #727f7a 48%, #222c29);
+  --phone-rim: rgba(232, 238, 235, 0.64);
+  --phone-screen: rgba(14, 20, 19, 0.91);
+  --phone-accent: #55736c;
+  --phone-shadow: 0 1rem 2.2rem rgba(21, 29, 27, 0.34);
 }
 
-.commlink-caller-incoming-dialog .dialog-buttons {
+.commlink-caller-phone--corporate::before {
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    inset 0 -1px 0 rgba(10, 14, 13, 0.24);
+}
+
+.commlink-caller-phone--none {
+  padding: 0;
+  border-color: transparent;
+  border-radius: 0.75rem;
+  background: transparent;
+  box-shadow: none;
+}
+
+.commlink-caller-phone--none::before,
+.commlink-caller-phone--none::after,
+.commlink-caller-phone--none .commlink-caller-phone__speaker,
+.commlink-caller-phone--none .commlink-caller-phone__button {
+  display: none;
+}
+
+.commlink-caller-phone--none .commlink-caller-phone__screen {
+  inset: 0;
+  border-radius: 0.75rem;
+}
+
+.commlink-caller-phone--none .commlink-caller-phone__close {
+  top: 4%;
+  left: 4%;
+}
+
+.commlink-caller-phone--none .commlink-caller-phone__ringtone-control {
+  top: 4%;
+  right: 4%;
+}
+
+.commlink-caller-phone--none .commlink-caller-phone__caller {
+  bottom: 17%;
+}
+
+.commlink-caller-phone--none .commlink-caller-phone__actions {
+  right: 7%;
+  bottom: 4%;
+  left: 7%;
+}
+
+.commlink-caller-phone__actions {
   position: absolute;
   right: 10%;
-  bottom: 5%;
+  bottom: 5.8%;
   left: 10%;
+  z-index: 2;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.65rem;
+  gap: var(--commlink-space-2);
   margin: 0;
-  z-index: 2;
 }
 
-.commlink-caller-incoming-dialog .dialog-buttons button {
+.commlink-caller-phone__actions button {
   min-height: 2.5rem;
-  border: 1px solid rgba(0, 241, 215, 0.45);
+  border: 1px solid color-mix(in srgb, var(--phone-accent) 50%, rgba(255, 255, 255, 0.16));
   border-radius: 999px;
-  background: rgba(4, 12, 17, 0.72);
-  color: #f4ead8;
-  font-weight: 700;
+  background: rgba(13, 20, 18, 0.76);
+  color: var(--phone-text);
+  font-weight: 800;
+  backdrop-filter: blur(0.65rem);
+}
+
+.commlink-caller-phone__actions button:active {
+  transform: translateY(1px) scale(0.98);
 }
 
 @media (max-width: 740px) {
-  .commlink-caller-manager__body {
-    grid-template-columns: 1fr;
+  .commlink-caller-contact__row {
+    align-items: flex-start;
   }
 
-  .commlink-caller-contact {
-    align-items: flex-start;
+  .commlink-caller-contact__actions {
+    flex-wrap: wrap;
+  }
+
+  .commlink-caller-editor__identity {
+    grid-template-columns: 1fr;
   }
 }

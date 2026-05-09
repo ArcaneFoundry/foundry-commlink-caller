@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile, stat } from "node:fs/promises";
+import { readFile, readdir, stat } from "node:fs/promises";
 import { test } from "node:test";
 
 import "../scripts/contact-model.js";
@@ -8,13 +8,27 @@ const contactModel = globalThis.CommlinkCaller.contactModel;
 
 test("module manifest advertises v13/v14 compatibility and loads contact model first", async () => {
   const manifest = JSON.parse(await readFile(new URL("../module.json", import.meta.url), "utf8"));
+  const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
 
+  assert.equal(manifest.id, "foundry-commlink-caller");
+  assert.equal(manifest.version, "1.0.0");
   assert.equal(manifest.compatibility.minimum, "13");
   assert.equal(manifest.compatibility.verified, "14");
+  assert.equal(manifest.compatibility.maximum, "14");
+  assert.equal(manifest.license, "LICENSE");
+  assert.equal(manifest.readme, "README.md");
+  assert.equal(manifest.changelog, "CHANGELOG.md");
+  assert.equal(manifest.bugs, "https://github.com/ArcaneFoundry/foundry-commlink-caller/issues");
+  assert.equal(manifest.socket, true);
+  assert.equal(manifest.manifest, "https://github.com/ArcaneFoundry/foundry-commlink-caller/releases/latest/download/module.json");
+  assert.equal(manifest.download, "https://github.com/ArcaneFoundry/foundry-commlink-caller/releases/download/v1.0.0/foundry-commlink-caller-v1.0.0.zip");
   assert.deepEqual(manifest.scripts, [
     "scripts/contact-model.js",
     "scripts/module.js"
   ]);
+  assert.equal(packageJson.name, "foundry-commlink-caller");
+  assert.equal(packageJson.version, "1.0.0");
+  assert.equal(packageJson.license, "MIT");
 });
 
 test("module bootstrap registers settings and GM menu during init", async () => {
@@ -96,6 +110,18 @@ test("module bootstrap registers settings and GM menu during init", async () => 
     ],
     [
       "foundry-commlink-caller",
+      "contactTargetSelections",
+      {
+        name: "Commlink call targets",
+        hint: "Stored selected call recipients for the Commlink contacts window.",
+        scope: "world",
+        config: false,
+        type: Object,
+        default: {}
+      }
+    ],
+    [
+      "foundry-commlink-caller",
       "showWelcome",
       {
         name: "Show welcome screen",
@@ -104,7 +130,7 @@ test("module bootstrap registers settings and GM menu during init", async () => 
         config: true,
         type: Boolean,
         default: true,
-        onChange: registeredSettings[1][2].onChange
+        onChange: registeredSettings[2][2].onChange
       }
     ],
     [
@@ -124,12 +150,12 @@ test("module bootstrap registers settings and GM menu during init", async () => 
       "preferredRingtone",
       {
         name: "Preferred ringtone",
-        hint: "Override caller ringtones for calls you receive, or use the caller's configured ringtone.",
+        hint: "Choose the ringtone that plays when your commlink receives a call.",
         scope: "user",
         config: true,
         type: String,
-        choices: registeredSettings[3][2].choices,
-        default: ""
+        choices: registeredSettings[4][2].choices,
+        default: "modules/foundry-commlink-caller/assets/sounds/ringtones/ringtone-1.ogg"
       }
     ],
     [
@@ -141,15 +167,16 @@ test("module bootstrap registers settings and GM menu during init", async () => 
         scope: "user",
         config: true,
         type: String,
-        choices: registeredSettings[4][2].choices,
+        choices: registeredSettings[5][2].choices,
         default: "cyberpunk"
       }
     ]
   ]);
-  assert.equal(registeredSettings[3][2].choices[""], "Use caller's ringtone");
-  assert.equal(registeredSettings[3][2].choices["modules/foundry-commlink-caller/assets/sounds/ringtones/cyberpunk-commlink.ogg"], "Cyberpunk - Commlink");
-  assert.equal(registeredSettings[4][2].choices.cyberpunk, "Cyberpunk neon");
-  assert.equal(registeredSettings[4][2].choices.retro, "1950s bakelite");
+  assert.equal(registeredSettings[4][2].choices["modules/foundry-commlink-caller/assets/sounds/ringtones/ringtone-1.ogg"], "Ringtone 1");
+  assert.equal(registeredSettings[4][2].choices["modules/foundry-commlink-caller/assets/sounds/ringtones/ringtone-18.ogg"], "Ringtone 18");
+  assert.equal(registeredSettings[5][2].choices.none, "No phone frame");
+  assert.equal(registeredSettings[5][2].choices.cyberpunk, "Cyberpunk neon");
+  assert.equal(registeredSettings[5][2].choices.retro, "1950s bakelite");
   assert.equal(registeredMenus.length, 1);
   assert.equal(registeredMenus[0][0], "foundry-commlink-caller");
   assert.equal(registeredMenus[0][1], "contactManager");
@@ -158,8 +185,8 @@ test("module bootstrap registers settings and GM menu during init", async () => 
   assert.equal(registeredMenus[0][2].type, globalThis.CommlinkCaller.ContactManager);
   assert.equal(globalThis.CommlinkCaller.TEMPLATES.manager, "modules/foundry-commlink-caller/templates/contact-manager.hbs");
   assert.equal(globalThis.CommlinkCaller.TEMPLATES.welcome, "modules/foundry-commlink-caller/templates/welcome.hbs");
-  assert.equal(globalThis.CommlinkCaller.RINGTONE_PRESETS.length, 7);
-  assert.equal(globalThis.CommlinkCaller.PHONE_FRAME_OPTIONS.length, 4);
+  assert.equal(globalThis.CommlinkCaller.RINGTONE_PRESETS.length, 18);
+  assert.equal(globalThis.CommlinkCaller.PHONE_FRAME_OPTIONS.length, 5);
   assert.equal(globalThis.CommlinkCaller.ContactManager.DEFAULT_OPTIONS.id, "commlink-caller-contact-manager");
   assert.equal(globalThis.CommlinkCaller.ContactManager.DEFAULT_OPTIONS.window.title, "Commlink");
   assert.deepEqual(globalThis.CommlinkCaller.ContactManager.DEFAULT_OPTIONS.position, {
@@ -262,17 +289,6 @@ test("contact helpers read and persist normalized contacts through Foundry setti
 });
 
 test("contact manager context renders normalized contacts and selected editor contact", async () => {
-  const unselectedPresets = globalThis.CommlinkCaller.RINGTONE_PRESETS.map((preset) => ({
-    label: preset.label,
-    path: preset.path,
-    selected: false
-  }));
-  const callTargets = [
-    { id: "all-players", name: "All players", isSelf: false },
-    { id: "gm", name: "Gamemaster (GM test)", isSelf: true },
-    { id: "player", name: "Raven", isSelf: false }
-  ];
-
   globalThis.game = {
     user: { id: "gm", name: "Gamemaster", isGM: true },
     users: [
@@ -281,8 +297,11 @@ test("contact manager context renders normalized contacts and selected editor co
       { id: "player", name: "Raven", isGM: false }
     ],
     settings: {
-      get: () => [
-        {
+      get: (moduleId, setting) => {
+        assert.equal(moduleId, "foundry-commlink-caller");
+        if (setting === "contactTargetSelections") return { __global__: ["player", "gm"] };
+
+        return [{
           id: "ace",
           name: "Ace",
           handle: "channel-1",
@@ -290,28 +309,26 @@ test("contact manager context renders normalized contacts and selected editor co
           ringtone: "",
           message: "Ready?",
           volume: 0.5
-        }
-      ]
+        }];
+      }
     }
   };
 
   const manager = new globalThis.CommlinkCaller.ContactManager();
+  const context = await manager._prepareContext();
 
-  assert.deepEqual(await manager._prepareContext(), {
-    contacts: [{
-      id: "ace",
-      name: "Ace",
-      handle: "channel-1",
-      portrait: "",
-      ringtone: "",
-      message: "Ready?",
-      volume: 0.5
-    }],
-    editorContact: null,
-    isEditing: false,
-    callTargets,
-    ringtonePresets: unselectedPresets
-  });
+  assert.equal(context.contacts[0].id, "ace");
+  assert.equal(context.contacts[0].isEditing, false);
+  assert.equal("callTargets" in context.contacts[0], false);
+  assert.deepEqual(context.callTargets.map((target) => [target.id, target.selected]), [
+    ["gm", true],
+    ["player", true]
+  ]);
+  assert.equal(context.allPlayerTargetsSelected, true);
+  assert.equal(context.editorContact, null);
+  assert.equal(context.isCreating, false);
+  assert.equal(context.isEditing, false);
+  assert.equal("ringtonePresets" in context, false);
 
   manager._editContact({
     preventDefault: () => {},
@@ -320,29 +337,13 @@ test("contact manager context renders normalized contacts and selected editor co
 
   assert.equal(manager.renderCount, 1);
   assert.deepEqual(manager.renderOptions, { force: true });
-  assert.deepEqual(await manager._prepareContext(), {
-    contacts: [{
-      id: "ace",
-      name: "Ace",
-      handle: "channel-1",
-      portrait: "",
-      ringtone: "",
-      message: "Ready?",
-      volume: 0.5
-    }],
-    editorContact: {
-      id: "ace",
-      name: "Ace",
-      handle: "channel-1",
-      portrait: "",
-      ringtone: "",
-      message: "Ready?",
-      volume: 0.5
-    },
-    isEditing: true,
-    callTargets,
-    ringtonePresets: unselectedPresets
-  });
+
+  const editingContext = await manager._prepareContext();
+
+  assert.equal(editingContext.contacts[0].isEditing, true);
+  assert.equal(editingContext.editorContact.id, "ace");
+  assert.equal(editingContext.isCreating, false);
+  assert.equal(editingContext.isEditing, true);
 });
 
 test("openContactManager is GM-only and reuses the existing window", async () => {
@@ -475,13 +476,46 @@ test("contact manager template keeps ids internal and exposes FilePicker buttons
 
   assert.equal(template.includes("name=\"id\""), false);
   assert.equal(template.includes("name=\"originalId\""), false);
-  assert.equal(template.includes("data-contact-target=\"{{id}}\""), true);
-  assert.equal(template.includes("{{#each ../callTargets}}"), true);
-  assert.equal(template.includes("name=\"ringtonePreset\""), true);
-  assert.equal(template.includes("data-action=\"apply-ringtone-preset\""), true);
+  assert.equal(template.includes("commlink-caller-manager__targets"), true);
+  assert.equal(template.includes("data-target-id=\"{{id}}\""), true);
+  assert.equal(template.includes("data-action=\"toggle-target\""), true);
+  assert.equal(template.includes("data-action=\"toggle-all-targets\""), true);
+  assert.equal(template.includes("{{#if allPlayerTargetsSelected}}"), true);
+  assert.equal(template.includes("{{#if isSelf}}is-self{{/if}}"), true);
+  assert.equal(template.includes("data-contact-target=\"{{id}}\""), false);
+  assert.equal(template.includes("{{#each callTargets}}"), true);
+  assert.equal(template.includes("multiple size=\"4\""), false);
+  assert.equal(template.includes("name=\"ringtonePreset\""), false);
+  assert.equal(template.includes("data-action=\"apply-ringtone-preset\""), false);
   assert.equal(template.includes("data-action=\"browse-file\" data-target=\"portrait\" data-type=\"image\""), true);
-  assert.equal(template.includes("data-action=\"browse-file\" data-target=\"ringtone\" data-type=\"audio\""), true);
+  assert.equal(template.includes("data-action=\"browse-file\" data-target=\"ringtone\" data-type=\"audio\""), false);
   assert.equal(template.includes("Select a contact or create a new one."), false);
+});
+
+test("module stylesheet defines a theme-aware design system", async () => {
+  const css = await readFile(new URL("../styles/module.css", import.meta.url), "utf8");
+
+  assert.equal(css.includes("--commlink-font-sans"), true);
+  assert.equal(css.includes("--commlink-font-mono"), true);
+  assert.equal(css.includes("--commlink-color-bg"), true);
+  assert.equal(css.includes("--commlink-color-surface"), true);
+  assert.equal(css.includes("--commlink-color-accent"), true);
+  assert.equal(css.includes("--commlink-space-3"), true);
+  assert.equal(css.includes("body.theme-dark .commlink-caller-contact-manager"), true);
+  assert.equal(css.includes("body.theme-light .commlink-caller-contact-manager"), true);
+  assert.equal(css.includes("@media (prefers-color-scheme: dark)"), true);
+  assert.equal(css.includes(".commlink-caller-manager__targets"), true);
+  assert.equal(css.includes("--commlink-ease-spring"), true);
+  assert.equal(css.includes(".commlink-caller-target-pill.is-selected::before"), true);
+  assert.equal(css.includes(".commlink-caller-target-pill.is-self"), true);
+  assert.equal(css.includes("filter: blur(0.6rem);"), true);
+  assert.equal(css.includes(".commlink-caller-manager__list {\n  min-height: 0;"), true);
+  assert.equal(css.includes(".commlink-caller-contact-manager .window-content button,"), true);
+  assert.equal(css.includes(".commlink-caller-welcome .window-content button,"), true);
+  assert.equal(css.includes(".commlink-caller-contact-manager button,"), false);
+  assert.equal(css.includes(".commlink-caller-welcome button,"), false);
+  assert.equal(css.includes(".commlink-caller-contact-manager input,"), true);
+  assert.equal(css.includes(".commlink-caller-phone__actions button:active"), true);
 });
 
 test("incoming call template renders a two-layer phone frame", async () => {
@@ -489,27 +523,43 @@ test("incoming call template renders a two-layer phone frame", async () => {
   const css = await readFile(new URL("../styles/module.css", import.meta.url), "utf8");
 
   assert.equal(template.includes("commlink-caller-phone {{frameClass}}"), true);
+  assert.equal(template.includes("{{#if hasPhoneFrame}}"), true);
+  assert.equal(template.includes("{{else}}"), true);
   assert.equal(template.includes("commlink-caller-phone__screen"), true);
   assert.equal(template.includes("commlink-caller-phone__caller"), true);
+  assert.equal(template.includes("commlink-caller-phone__actions"), true);
+  assert.equal(template.includes("commlink-caller-phone__close"), true);
+  assert.equal(template.includes("data-action=\"change-ringtone\""), true);
   assert.equal(template.includes("For {{targetName}}"), true);
+  assert.equal(template.includes("{{contact.message}}"), false);
   assert.equal(template.includes("commlink-caller-incoming__body"), false);
-  assert.equal(css.includes(".commlink-caller-incoming-dialog .window-header .window-title"), true);
-  assert.equal(css.includes(".commlink-caller-incoming-dialog .dialog-buttons"), true);
+  assert.equal(css.includes(".commlink-caller-incoming-dialog .window-header {\n  display: none;"), true);
+  assert.equal(css.includes(".commlink-caller-phone--none"), true);
+  assert.equal(css.includes(".commlink-caller-phone--none .commlink-caller-phone__actions"), true);
+  assert.equal(css.includes(".commlink-caller-phone--cyberpunk::before"), true);
+  assert.equal(css.includes(".commlink-caller-phone--modern::before"), true);
+  assert.equal(css.includes(".commlink-caller-phone--retro::before"), true);
+  assert.equal(css.includes(".commlink-caller-phone--corporate::before"), true);
+  assert.equal(css.includes(".commlink-caller-phone__actions"), true);
   assert.equal(css.includes("max-height: 27rem"), true);
 });
 
-test("bundled ringtone presets cover common genres and point to shipped audio", async () => {
-  const labels = globalThis.CommlinkCaller.RINGTONE_PRESETS.map((preset) => preset.label);
+test("bundled ringtone presets ship the complete normalized OGG library", async () => {
+  const ringtoneDirectory = new URL("../assets/sounds/ringtones/", import.meta.url);
+  const ringtoneFiles = (await readdir(ringtoneDirectory))
+    .filter((fileName) => fileName.endsWith(".ogg"))
+    .sort((first, second) => first.localeCompare(second, undefined, { numeric: true }));
+  const expectedFiles = Array.from({ length: ringtoneFiles.length }, (_value, index) => `ringtone-${index + 1}.ogg`);
 
-  assert.equal(labels.some((label) => label.includes("Fantasy")), true);
-  assert.equal(labels.some((label) => label.includes("Gothic")), true);
-  assert.equal(labels.some((label) => label.includes("Western")), true);
-  assert.equal(labels.some((label) => label.includes("1950s")), true);
-  assert.equal(labels.some((label) => label.includes("Modern")), true);
-  assert.equal(labels.some((label) => label.includes("Cyberpunk")), true);
-  assert.equal(labels.some((label) => label.includes("Far Future")), true);
+  assert.deepEqual(ringtoneFiles, expectedFiles);
+  assert.equal((await readdir(ringtoneDirectory)).some((fileName) => fileName.endsWith(".mp3")), false);
+  assert.equal(globalThis.CommlinkCaller.RINGTONE_PRESETS.length, expectedFiles.length);
 
   for (const preset of globalThis.CommlinkCaller.RINGTONE_PRESETS) {
+    const presetIndex = globalThis.CommlinkCaller.RINGTONE_PRESETS.indexOf(preset) + 1;
+
+    assert.equal(preset.label, `Ringtone ${presetIndex}`);
+    assert.equal(preset.path, `modules/foundry-commlink-caller/assets/sounds/ringtones/ringtone-${presetIndex}.ogg`);
     assert.equal(preset.path.startsWith("modules/foundry-commlink-caller/assets/sounds/ringtones/"), true);
 
     const localPath = preset.path.replace("modules/foundry-commlink-caller/", "../");
@@ -558,30 +608,19 @@ test("contact manager file buttons delegate to Foundry FilePicker.fromButton", a
   }
 });
 
-test("ringtone preset selection fills the ringtone path", () => {
-  const ringtoneInput = { value: "" };
-  const form = {
-    querySelector: (selector) => selector === "[name='ringtone']" ? ringtoneInput : null
-  };
-  const select = {
-    value: "modules/foundry-commlink-caller/assets/sounds/ringtones/modern-alert.ogg",
-    closest: (selector) => selector === "[data-contact-form]" ? form : null
-  };
-  const manager = new globalThis.CommlinkCaller.ContactManager();
-
-  manager._applyRingtonePreset({ currentTarget: select });
-
-  assert.equal(ringtoneInput.value, "modules/foundry-commlink-caller/assets/sounds/ringtones/modern-alert.ogg");
-});
-
 test("contact manager passes selected recipient to placeCall", async () => {
   const placedCalls = [];
   const manager = new globalThis.CommlinkCaller.ContactManager();
   const originalPlaceCall = globalThis.CommlinkCaller.placeCall;
 
-  manager.element = {
-    querySelector: (selector) => selector === "[data-contact-target=\"ace\"]" ? { value: "player" } : null
+  globalThis.game = {
+    user: { id: "gm", name: "Gamemaster", isGM: true },
+    users: [
+      { id: "gm", name: "Gamemaster", isGM: true },
+      { id: "player", name: "Raven", isGM: false }
+    ]
   };
+  manager._targetUserIds = ["player", "gm"];
   globalThis.CommlinkCaller.placeCall = async (...args) => placedCalls.push(args);
 
   try {
@@ -590,13 +629,95 @@ test("contact manager passes selected recipient to placeCall", async () => {
       currentTarget: { dataset: { contactId: "ace" } }
     });
 
-    assert.deepEqual(placedCalls, [[
-      "ace",
-      { targetUserId: "player" }
-    ]]);
+  assert.deepEqual(placedCalls, [[
+    "ace",
+    { targetUserIds: ["player", "gm"] }
+  ]]);
   } finally {
     globalThis.CommlinkCaller.placeCall = originalPlaceCall;
   }
+});
+
+test("contact manager persists global recipient pill selections", async () => {
+  const savedSettings = [];
+
+  globalThis.game = {
+    user: { id: "gm", name: "Gamemaster", isGM: true },
+    users: [
+      { id: "gm", name: "Gamemaster", isGM: true },
+      { id: "player", name: "Raven", isGM: false }
+    ],
+    settings: {
+      get: () => ({ __global__: [] }),
+      set: async (...args) => savedSettings.push(args)
+    }
+  };
+
+  const manager = new globalThis.CommlinkCaller.ContactManager();
+
+  await manager._toggleCallTarget({
+    preventDefault: () => {},
+    currentTarget: {
+      dataset: { targetId: "player" }
+    }
+  });
+
+  assert.deepEqual(savedSettings.at(-1), [
+    "foundry-commlink-caller",
+    "contactTargetSelections",
+    { __global__: ["player"] }
+  ]);
+  assert.deepEqual(manager._targetUserIds, ["player"]);
+
+  await manager._toggleCallTarget({
+    preventDefault: () => {},
+    currentTarget: {
+      dataset: { targetId: "gm" }
+    }
+  });
+
+  assert.deepEqual(savedSettings.at(-1), [
+    "foundry-commlink-caller",
+    "contactTargetSelections",
+    { __global__: ["player", "gm"] }
+  ]);
+
+  await manager._toggleAllTargets({ preventDefault: () => {} });
+
+  assert.deepEqual(savedSettings.at(-1), [
+    "foundry-commlink-caller",
+    "contactTargetSelections",
+    { __global__: ["gm"] }
+  ]);
+
+  await manager._toggleAllTargets({ preventDefault: () => {} });
+
+  assert.deepEqual(savedSettings.at(-1), [
+    "foundry-commlink-caller",
+    "contactTargetSelections",
+    { __global__: ["gm", "player"] }
+  ]);
+
+  await manager._toggleCallTarget({
+    preventDefault: () => {},
+    currentTarget: {
+      dataset: { targetId: "gm" }
+    }
+  });
+
+  assert.deepEqual(savedSettings.at(-1), [
+    "foundry-commlink-caller",
+    "contactTargetSelections",
+    { __global__: ["player"] }
+  ]);
+
+  await manager._toggleAllTargets({ preventDefault: () => {} });
+
+  assert.deepEqual(savedSettings.at(-1), [
+    "foundry-commlink-caller",
+    "contactTargetSelections",
+    { __global__: [] }
+  ]);
 });
 
 test("saving an existing contact preserves the selected contact ID", async () => {
@@ -666,7 +787,7 @@ test("saving an existing contact preserves the selected contact ID", async () =>
           name: "Ace Updated",
           handle: "channel-updated",
           portrait: "ace.webp",
-          ringtone: "ace.ogg",
+          ringtone: "",
           message: "Updated",
           volume: 0.75
         },
@@ -756,7 +877,7 @@ test("saving a new contact generates a fresh ID instead of trusting form IDs", a
           name: "Nova",
           handle: "channel-3",
           portrait: "nova.webp",
-          ringtone: "nova.ogg",
+          ringtone: "",
           message: "Incoming",
           volume: 0.65
         }
@@ -828,7 +949,7 @@ test("placeCall emits normalized incoming-call payload for GMs", async () => {
       }
     }
   ]]);
-  assert.deepEqual(infos, ["Calling All players from Ace."]);
+  assert.deepEqual(infos, []);
   assert.deepEqual(warnings, []);
 
   await globalThis.CommlinkCaller.placeCall("ace", { targetUserId: "player" });
@@ -840,6 +961,98 @@ test("placeCall emits normalized incoming-call payload for GMs", async () => {
 
   assert.equal(emittedPayloads.length, 2);
   assert.equal(warnings.length, 1);
+});
+
+test("placeCall renders the incoming phone for a GM self test", async () => {
+  const emittedPayloads = [];
+  const audioCalls = [];
+  const dialogs = [];
+  const templates = [];
+  const infos = [];
+
+  globalThis.foundry.utils = {
+    randomID: () => "self-call-id"
+  };
+  globalThis.foundry.audio = {
+    AudioHelper: {
+      play: async (...args) => audioCalls.push(args)
+    }
+  };
+  globalThis.foundry.applications.handlebars = {
+    renderTemplate: async (...args) => {
+      templates.push(args);
+
+      return "<section class=\"commlink-caller-incoming\">Self test</section>";
+    }
+  };
+  globalThis.CommlinkCaller.DialogV2 = class DialogV2 {
+    constructor(options) {
+      this.options = options;
+      this.element = { querySelector: () => null };
+      dialogs.push(this);
+    }
+
+    async render(options) {
+      this.renderOptions = options;
+      this.renderComplete = true;
+      return this;
+    }
+  };
+  globalThis.game = {
+    user: { id: "gm", name: "Gamemaster", isGM: true },
+    users: [
+      { id: "gm", name: "Gamemaster", isGM: true },
+      { id: "player", name: "Raven", isGM: false }
+    ],
+    socket: {
+      emit: (...args) => emittedPayloads.push(args)
+    },
+    settings: {
+      get: (moduleId, setting) => {
+        assert.equal(moduleId, "foundry-commlink-caller");
+        if (setting === "preferredPhoneFrame") return "cyberpunk";
+        if (setting === "preferredRingtone") return "";
+
+        return [{
+          id: "ace",
+          name: "Ace",
+          handle: "channel-1",
+          portrait: "",
+          ringtone: "",
+          message: "Pick up",
+          volume: 0.4
+        }];
+      }
+    }
+  };
+  globalThis.ui = {
+    notifications: {
+      info: (message) => infos.push(message)
+    }
+  };
+
+  const payloads = await globalThis.CommlinkCaller.placeCall("ace", { targetUserId: "gm" });
+
+  assert.equal(dialogs.length, 1);
+  assert.equal(dialogs[0].renderComplete, true);
+  assert.deepEqual(dialogs[0].renderOptions, { force: true });
+  assert.equal(templates[0][1].targetName, "Gamemaster");
+  assert.equal(payloads[0].targetUserId, "gm");
+  assert.equal(payloads[0].targetUserName, "Gamemaster");
+  assert.deepEqual(emittedPayloads.map((entry) => entry[1].type), [
+    "incoming-call",
+    "call-status"
+  ]);
+  assert.deepEqual(audioCalls, [[
+    {
+      src: "modules/foundry-commlink-caller/assets/sounds/ringtones/ringtone-1.ogg",
+      volume: 0.4,
+      autoplay: true,
+      loop: false
+    },
+    false
+  ]]);
+  assert.deepEqual(infos, []);
 });
 
 test("call status messages notify the calling GM once", () => {
@@ -883,7 +1096,6 @@ test("call status messages notify the calling GM once", () => {
   });
 
   assert.deepEqual(infos, [
-    "Raven is ringing: Mr. Johnson.",
     "Raven answered: Mr. Johnson."
   ]);
 });
@@ -925,7 +1137,7 @@ test("receiveSocketMessage targets recipients and renders themed incoming calls"
     settings: {
       get: (moduleId, setting) => {
         assert.equal(moduleId, "foundry-commlink-caller");
-        if (setting === "preferredPhoneFrame") return "retro";
+        if (setting === "preferredPhoneFrame") return "none";
         if (setting === "preferredRingtone") return "";
 
         return undefined;
@@ -1011,39 +1223,38 @@ test("receiveSocketMessage targets recipients and renders themed incoming calls"
   ]);
   assert.deepEqual(audioCalls, [[
     {
-      src: "ring.ogg",
+      src: "modules/foundry-commlink-caller/assets/sounds/ringtones/ringtone-1.ogg",
       volume: 0.25,
       autoplay: true,
       loop: false
     },
     false
   ]]);
-  assert.deepEqual(templates, [[
-    "modules/foundry-commlink-caller/templates/incoming-call.hbs",
-    {
-      contact: normalizedContact,
-      targetName: "Raven",
-      frame: "retro",
-      frameClass: "commlink-caller-phone--retro"
-    }
-  ]]);
+  assert.equal(templates[0][0], "modules/foundry-commlink-caller/templates/incoming-call.hbs");
+  assert.deepEqual(templates[0][1].contact, normalizedContact);
+  assert.equal(templates[0][1].targetName, "Raven");
+  assert.equal(templates[0][1].frame, "none");
+  assert.equal(templates[0][1].frameClass, "commlink-caller-phone--none");
+  assert.equal(templates[0][1].hasPhoneFrame, false);
+  assert.deepEqual(
+    templates[0][1].ringtonePresets,
+    globalThis.CommlinkCaller.RINGTONE_PRESETS.map((preset, index) => ({
+      ...preset,
+      selected: index === 0
+    }))
+  );
   assert.deepEqual(dialogs[0].options.classes, ["commlink-caller-incoming-dialog"]);
   assert.deepEqual(dialogs[0].options.window, {
     title: "",
     resizable: false
   });
   assert.deepEqual(dialogs[0].options.position, {
-    width: 360,
-    height: 560
+    width: 390,
+    height: 620
   });
   assert.equal(dialogs[0].options.content, "<section class=\"commlink-caller-incoming\">Incoming</section>");
-  assert.equal(dialogs[0].options.buttons.length, 2);
-  assert.equal(dialogs[0].options.buttons[0].action, "answer");
-  assert.equal(dialogs[0].options.buttons[1].action, "dismiss");
-
-  dialogs[0].options.buttons[0].callback();
-
-  assert.equal(emittedPayloads.at(-1)[1].status, "answered");
+  assert.equal(dialogs[0].options.buttons.length, 1);
+  assert.equal(dialogs[0].options.buttons[0].action, "dismiss");
   assert.equal(dialogs[0].renderComplete, true);
 
   finishRender = undefined;
@@ -1128,8 +1339,90 @@ test("playRingtone skips missing sounds and logs playback failures", async () =>
     globalThis.console.warn = originalWarn;
   }
 
-  assert.equal(errors.length, 1);
+  assert.equal(errors.length, 2);
   assert.equal(errors[0][0], "Commlink Caller failed to play ringtone.");
+});
+
+test("incoming phone ringtone selector saves and previews the selected preset", async () => {
+  const audioCalls = [];
+  const savedSettings = [];
+  const templates = [];
+  const listeners = new Map();
+
+  globalThis.foundry.audio = {
+    AudioHelper: {
+      play: async (...args) => audioCalls.push(args)
+    }
+  };
+  globalThis.foundry.applications.handlebars = {
+    renderTemplate: async (...args) => {
+      templates.push(args);
+
+      return "<section class=\"commlink-caller-incoming\">Incoming</section>";
+    }
+  };
+  globalThis.CommlinkCaller.DialogV2 = class DialogV2 {
+    constructor() {
+      this.element = {
+        querySelector: (selector) => selector === "[data-action='change-ringtone']"
+          ? { addEventListener: (eventName, callback) => listeners.set(eventName, callback) }
+          : null,
+        querySelectorAll: () => []
+      };
+    }
+
+    async render() {
+      return this;
+    }
+  };
+  globalThis.game = {
+    user: { id: "player", name: "Raven", isGM: false },
+    settings: {
+      get: (moduleId, setting) => {
+        assert.equal(moduleId, "foundry-commlink-caller");
+        if (setting === "preferredPhoneFrame") return "cyberpunk";
+        if (setting === "preferredRingtone") return "modules/foundry-commlink-caller/assets/sounds/ringtones/retired.mp3";
+
+        return undefined;
+      },
+      set: async (...args) => savedSettings.push(args)
+    }
+  };
+  globalThis.ui = {
+    notifications: {
+      info: () => {}
+    }
+  };
+
+  await globalThis.CommlinkCaller.showIncomingCall({
+    id: "ace",
+    name: "Ace",
+    volume: 0.35
+  });
+
+  assert.equal(templates[0][1].ringtonePresets[0].selected, true);
+  assert.equal(templates[0][1].ringtonePresets.some((preset, index) => index > 0 && preset.selected), false);
+
+  await listeners.get("change")({
+    currentTarget: {
+      value: "modules/foundry-commlink-caller/assets/sounds/ringtones/ringtone-4.ogg"
+    }
+  });
+
+  assert.deepEqual(savedSettings, [[
+    "foundry-commlink-caller",
+    "preferredRingtone",
+    "modules/foundry-commlink-caller/assets/sounds/ringtones/ringtone-4.ogg"
+  ]]);
+  assert.deepEqual(audioCalls, [[
+    {
+      src: "modules/foundry-commlink-caller/assets/sounds/ringtones/ringtone-4.ogg",
+      volume: 0.35,
+      autoplay: true,
+      loop: false
+    },
+    false
+  ]]);
 });
 
 test("playRingtone uses the receiving user's preferred ringtone when set", async () => {
@@ -1146,7 +1439,7 @@ test("playRingtone uses the receiving user's preferred ringtone when set", async
         assert.equal(moduleId, "foundry-commlink-caller");
         assert.equal(setting, "preferredRingtone");
 
-        return "modules/foundry-commlink-caller/assets/sounds/ringtones/cyberpunk-commlink.ogg";
+        return "modules/foundry-commlink-caller/assets/sounds/ringtones/ringtone-7.ogg";
       }
     }
   };
@@ -1159,7 +1452,7 @@ test("playRingtone uses the receiving user's preferred ringtone when set", async
 
   assert.deepEqual(audioCalls, [[
     {
-      src: "modules/foundry-commlink-caller/assets/sounds/ringtones/cyberpunk-commlink.ogg",
+      src: "modules/foundry-commlink-caller/assets/sounds/ringtones/ringtone-7.ogg",
       volume: 0.4,
       autoplay: true,
       loop: false

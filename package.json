@@ -1,4 +1,9 @@
 {
+  "name": "foundry-commlink-caller",
+  "version": "1.0.0",
+  "description": "A lightweight Foundry VTT module for GM-run commlink calls.",
+  "license": "MIT",
+  "private": true,
   "scripts": {
     "test": "node --test"
   }

@@ -1,8 +1,8 @@
 {
   "id": "foundry-commlink-caller",
   "title": "Commlink Caller",
-  "description": "A lightweight Foundry VTT module for cyberpunk comm-link call prompts.",
-  "version": "0.1.0",
+  "description": "A lightweight Foundry VTT module for GM-run commlink call prompts with contact portraits, player-selected ringtones, and phone-frame incoming call screens.",
+  "version": "1.0.0",
   "authors": [
     {
       "name": "John Gallego",
@@ -10,10 +10,15 @@
     }
   ],
   "url": "https://github.com/ArcaneFoundry/foundry-commlink-caller",
-  "license": "MIT",
+  "license": "LICENSE",
+  "readme": "README.md",
+  "bugs": "https://github.com/ArcaneFoundry/foundry-commlink-caller/issues",
+  "changelog": "CHANGELOG.md",
+  "socket": true,
   "compatibility": {
     "minimum": "13",
-    "verified": "14"
+    "verified": "14",
+    "maximum": "14"
   },
   "scripts": [
     "scripts/contact-model.js",
@@ -22,6 +27,6 @@
   "styles": [
     "styles/module.css"
   ],
-  "manifest": "https://raw.githubusercontent.com/ArcaneFoundry/foundry-commlink-caller/main/module.json",
-  "download": "https://github.com/ArcaneFoundry/foundry-commlink-caller/releases/download/v0.1.0/foundry-commlink-caller-v0.1.0.zip"
+  "manifest": "https://github.com/ArcaneFoundry/foundry-commlink-caller/releases/latest/download/module.json",
+  "download": "https://github.com/ArcaneFoundry/foundry-commlink-caller/releases/download/v1.0.0/foundry-commlink-caller-v1.0.0.zip"
 }

@@ -1,11 +1,13 @@
 const MODULE_ID = "foundry-commlink-caller";
 const CONTACTS_SETTING = "contacts";
+const CONTACT_TARGET_SELECTIONS_SETTING = "contactTargetSelections";
 const SHOW_WELCOME_SETTING = "showWelcome";
 const SHOW_SCENE_CONTROL_BUTTON_SETTING = "showSceneControlButton";
 const PREFERRED_RINGTONE_SETTING = "preferredRingtone";
 const PREFERRED_PHONE_FRAME_SETTING = "preferredPhoneFrame";
 const SOCKET_NAME = `module.${MODULE_ID}`;
 const ALL_PLAYERS_TARGET = "all-players";
+const GLOBAL_TARGET_SELECTION_ID = "__global__";
 const CALL_STATUS_LABELS = Object.freeze({
   ringing: "is ringing",
   answered: "answered",
@@ -16,36 +18,14 @@ const TEMPLATES = Object.freeze({
   incomingCall: `modules/${MODULE_ID}/templates/incoming-call.hbs`,
   welcome: `modules/${MODULE_ID}/templates/welcome.hbs`
 });
-const RINGTONE_PRESETS = Object.freeze([
-  {
-    label: "Fantasy / Arcane - Crystal chime",
-    path: `modules/${MODULE_ID}/assets/sounds/ringtones/fantasy-crystal-chime.ogg`
-  },
-  {
-    label: "Gothic / Horror - Omen",
-    path: `modules/${MODULE_ID}/assets/sounds/ringtones/gothic-omen.ogg`
-  },
-  {
-    label: "Western - Telegraph tick",
-    path: `modules/${MODULE_ID}/assets/sounds/ringtones/western-telegraph.ogg`
-  },
-  {
-    label: "1950s / Retro - Switchboard",
-    path: `modules/${MODULE_ID}/assets/sounds/ringtones/retro-1950s-switchboard.ogg`
-  },
-  {
-    label: "Modern - Alert",
-    path: `modules/${MODULE_ID}/assets/sounds/ringtones/modern-alert.ogg`
-  },
-  {
-    label: "Cyberpunk - Commlink",
-    path: `modules/${MODULE_ID}/assets/sounds/ringtones/cyberpunk-commlink.ogg`
-  },
-  {
-    label: "Far Future - Starship hail",
-    path: `modules/${MODULE_ID}/assets/sounds/ringtones/starship-hail.ogg`
-  }
-]);
+const RINGTONE_PRESETS = Object.freeze(Array.from({ length: 18 }, (_value, index) => {
+  const ringtoneNumber = index + 1;
+
+  return {
+    label: `Ringtone ${ringtoneNumber}`,
+    path: `modules/${MODULE_ID}/assets/sounds/ringtones/ringtone-${ringtoneNumber}.ogg`
+  };
+}));
 const PHONE_FRAME_OPTIONS = Object.freeze([
   {
     value: "cyberpunk",
@@ -62,6 +42,10 @@ const PHONE_FRAME_OPTIONS = Object.freeze([
   {
     value: "corporate",
     label: "Corporate chrome"
+  },
+  {
+    value: "none",
+    label: "No phone frame"
   }
 ]);
 const NEW_CONTACT_ID = "__new__";
@@ -75,6 +59,7 @@ const {
 globalThis.CommlinkCaller = globalThis.CommlinkCaller || {};
 globalThis.CommlinkCaller.MODULE_ID = MODULE_ID;
 globalThis.CommlinkCaller.CONTACTS_SETTING = CONTACTS_SETTING;
+globalThis.CommlinkCaller.CONTACT_TARGET_SELECTIONS_SETTING = CONTACT_TARGET_SELECTIONS_SETTING;
 globalThis.CommlinkCaller.SHOW_WELCOME_SETTING = SHOW_WELCOME_SETTING;
 globalThis.CommlinkCaller.SHOW_SCENE_CONTROL_BUTTON_SETTING = SHOW_SCENE_CONTROL_BUTTON_SETTING;
 globalThis.CommlinkCaller.PREFERRED_RINGTONE_SETTING = PREFERRED_RINGTONE_SETTING;
@@ -109,18 +94,9 @@ function createEmptyContact() {
     name: "",
     handle: "",
     portrait: "",
-    ringtone: "",
     message: "Incoming call",
     volume: 0.8
   };
-}
-
-function getRingtonePresetOptions(ringtone) {
-  return RINGTONE_PRESETS.map((preset) => ({
-    label: preset.label,
-    path: preset.path,
-    selected: preset.path === ringtone
-  }));
 }
 
 function getRingtoneSettingChoices() {
@@ -128,7 +104,7 @@ function getRingtoneSettingChoices() {
     choices[preset.path] = preset.label;
 
     return choices;
-  }, { "": "Use caller's ringtone" });
+  }, {});
 }
 
 function getPhoneFrameSettingChoices() {
@@ -179,6 +155,68 @@ function getCallTargets() {
   return targets;
 }
 
+function normalizeTargetIds(targetIds) {
+  const ids = Array.isArray(targetIds) ? targetIds : [targetIds];
+  const normalizedIds = ids.map(getContactId).filter(Boolean);
+  const uniqueIds = Array.from(new Set(normalizedIds));
+
+  return uniqueIds.length ? uniqueIds : [ALL_PLAYERS_TARGET];
+}
+
+function getContactTargetSelections() {
+  const selections = game.settings.get(MODULE_ID, CONTACT_TARGET_SELECTIONS_SETTING);
+
+  return selections && typeof selections === "object" && !Array.isArray(selections) ? selections : {};
+}
+
+function getSelectableCallTargets() {
+  return getCallTargets().filter((target) => target.id !== ALL_PLAYERS_TARGET);
+}
+
+function getSelectablePlayerTargets() {
+  return getSelectableCallTargets().filter((target) => !target.isSelf);
+}
+
+function normalizeManagerTargetIds(targetIds) {
+  const selectableIds = new Set(getSelectableCallTargets().map((target) => target.id));
+  const ids = Array.isArray(targetIds) ? targetIds : [targetIds];
+  const normalizedIds = ids
+    .map(getContactId)
+    .filter((id) => selectableIds.has(id));
+
+  return Array.from(new Set(normalizedIds));
+}
+
+function getSelectedTargetIds() {
+  const selectedIds = getContactTargetSelections()[GLOBAL_TARGET_SELECTION_ID];
+  const normalizedIds = normalizeManagerTargetIds(selectedIds);
+
+  if (normalizedIds.length) return normalizedIds;
+  if (Array.isArray(selectedIds)) return [];
+
+  return getSelectableCallTargets().map((target) => target.id);
+}
+
+function getCallTargetOptions(selectedIds = getSelectedTargetIds()) {
+  const selectedTargetIds = normalizeManagerTargetIds(selectedIds);
+
+  return getSelectableCallTargets().map((target) => ({
+    id: target.id,
+    name: target.name,
+    isSelf: target.isSelf,
+    selected: selectedTargetIds.includes(target.id)
+  }));
+}
+
+async function setCallTargetSelection(targetIds) {
+  const selections = Object.assign({}, getContactTargetSelections());
+  selections[GLOBAL_TARGET_SELECTION_ID] = normalizeManagerTargetIds(targetIds);
+
+  await game.settings.set(MODULE_ID, CONTACT_TARGET_SELECTIONS_SETTING, selections);
+
+  return selections[GLOBAL_TARGET_SELECTION_ID];
+}
+
 function getTargetUser(targetUserId) {
   return getUserCollection().find((user) => user?.id === targetUserId) || null;
 }
@@ -187,10 +225,31 @@ function createCallId() {
   return foundry.utils?.randomID?.() || Math.random().toString(36).slice(2, 13);
 }
 
-function getPreferredRingtone(contact) {
+function getDefaultRingtone() {
+  return RINGTONE_PRESETS[0].path;
+}
+
+function getRingtone(value) {
+  const requestedRingtone = typeof value === "string" ? value : "";
+  const preset = RINGTONE_PRESETS.find((option) => option.path === requestedRingtone);
+
+  return preset?.path || getDefaultRingtone();
+}
+
+function getRingtonePresetOptions(ringtone) {
+  const selectedRingtone = getRingtone(ringtone);
+
+  return RINGTONE_PRESETS.map((preset) => ({
+    label: preset.label,
+    path: preset.path,
+    selected: preset.path === selectedRingtone
+  }));
+}
+
+function getPreferredRingtone() {
   const preferredRingtone = game.settings.get(MODULE_ID, PREFERRED_RINGTONE_SETTING);
 
-  return preferredRingtone || contact.ringtone;
+  return getRingtone(preferredRingtone);
 }
 
 function getPreferredPhoneFrame() {
@@ -207,6 +266,12 @@ function getContactManager() {
   return foundry.applications.instances.get(ContactManager.DEFAULT_OPTIONS.id);
 }
 
+function bringToFrontAfterRender(application, renderResult) {
+  Promise.resolve(renderResult)
+    .then(() => application.bringToFront?.())
+    .catch((error) => console.warn("Commlink Caller could not bring the window forward.", error));
+}
+
 function openContactManager() {
   if (!game.user?.isGM) {
     globalThis.ui?.notifications?.warn?.("Only GMs can manage commlink contacts.");
@@ -214,8 +279,7 @@ function openContactManager() {
   }
 
   const manager = getContactManager() || new ContactManager();
-  manager.render({ force: true });
-  manager.bringToFront?.();
+  bringToFrontAfterRender(manager, manager.render({ force: true }));
 
   return manager;
 }
@@ -233,8 +297,7 @@ function openWelcomeScreen({ force = false } = {}) {
   if (!force && !shouldShowWelcome()) return null;
 
   const welcome = getWelcomeScreen() || new WelcomeScreen();
-  welcome.render({ force: true });
-  welcome.bringToFront?.();
+  bringToFrontAfterRender(welcome, welcome.render({ force: true }));
 
   return welcome;
 }
@@ -246,9 +309,38 @@ async function placeCall(contactId, options = {}) {
   }
 
   const targetId = getContactId(contactId);
-  const targetUserId = getContactId(options.targetUserId) || ALL_PLAYERS_TARGET;
-  const targetUser = targetUserId === ALL_PLAYERS_TARGET ? null : getTargetUser(targetUserId);
   const contact = getContacts().find((candidate) => candidate.id === targetId);
+  const targetUserIds = normalizeTargetIds(options.targetUserIds || options.targetUserId || ALL_PLAYERS_TARGET);
+
+  if (!contact) {
+    globalThis.ui?.notifications?.warn?.("Unable to place commlink call.");
+    return null;
+  }
+
+  if (targetUserIds.includes(ALL_PLAYERS_TARGET)) {
+    const payload = await emitCallToTarget(contact, ALL_PLAYERS_TARGET);
+
+    return [payload];
+  }
+
+  const payloads = [];
+
+  for (const targetUserId of targetUserIds) {
+    const targetUser = getTargetUser(targetUserId);
+    if (!targetUser) continue;
+
+    payloads.push(await emitCallToTarget(contact, targetUserId, targetUser));
+  }
+
+  if (!payloads.length) {
+    globalThis.ui?.notifications?.warn?.("Unable to find any commlink recipients.");
+    return null;
+  }
+
+  return payloads;
+}
+
+async function emitCallToTarget(contact, targetUserId, targetUser = null) {
   const payload = getContactModel().createCallPayload(contact, {
     callId: createCallId(),
     targetUserId: targetUserId === ALL_PLAYERS_TARGET ? "" : targetUserId,
@@ -257,20 +349,8 @@ async function placeCall(contactId, options = {}) {
     callerUserName: getUserName(game.user)
   });
 
-  if (!payload) {
-    globalThis.ui?.notifications?.warn?.("Unable to place commlink call.");
-    return null;
-  }
-
-  if (targetUserId !== ALL_PLAYERS_TARGET && !targetUser) {
-    globalThis.ui?.notifications?.warn?.("Unable to find that commlink recipient.");
-    return null;
-  }
-
   game.socket.emit(SOCKET_NAME, payload);
   if (targetUserId === game.user?.id) await receiveSocketMessage(payload);
-
-  globalThis.ui?.notifications?.info?.(`Calling ${payload.targetUserName} from ${payload.contact.name}.`);
 
   return payload;
 }
@@ -294,7 +374,7 @@ async function receiveSocketMessage(payload) {
   const call = Object.assign({}, payload, { contact });
 
   sendCallStatus("ringing", call);
-  await playRingtone(contact);
+  playRingtone(contact);
   await showIncomingCall(contact, call);
 }
 
@@ -308,6 +388,7 @@ function receiveCallStatus(payload) {
 
   const statusLabel = CALL_STATUS_LABELS[payload.status];
   if (!statusLabel) return;
+  if (payload.status === "ringing") return;
 
   globalThis.ui?.notifications?.info?.(`${payload.targetUserName} ${statusLabel}: ${payload.contactName}.`);
 }
@@ -328,13 +409,18 @@ function sendCallStatus(status, call) {
 }
 
 async function playRingtone(contact) {
-  const ringtone = getPreferredRingtone(contact);
-  if (!ringtone) return;
+  await playRingtoneSource(getPreferredRingtone(), contact?.volume);
+}
+
+async function playRingtoneSource(ringtone, volume) {
+  const selectedRingtone = getRingtone(ringtone);
+  const selectedVolume = Number.isFinite(volume) ? volume : 0.8;
+  if (!selectedRingtone) return;
 
   try {
     await foundry.audio.AudioHelper.play({
-      src: ringtone,
-      volume: contact.volume,
+      src: selectedRingtone,
+      volume: selectedVolume,
       autoplay: true,
       loop: false
     }, false);
@@ -349,7 +435,9 @@ async function showIncomingCall(contact, call = {}) {
     contact,
     targetName: call.targetUserName || getUserName(game.user),
     frame,
-    frameClass: `commlink-caller-phone--${frame}`
+    frameClass: `commlink-caller-phone--${frame}`,
+    hasPhoneFrame: frame !== "none",
+    ringtonePresets: getRingtonePresetOptions(getPreferredRingtone())
   });
   const dialog = new globalThis.CommlinkCaller.DialogV2({
     classes: ["commlink-caller-incoming-dialog"],
@@ -358,16 +446,11 @@ async function showIncomingCall(contact, call = {}) {
       resizable: false
     },
     position: {
-      width: 360,
-      height: 560
+      width: 390,
+      height: 620
     },
     content,
     buttons: [{
-      action: "answer",
-      label: "Answer",
-      default: true,
-      callback: () => sendCallStatus("answered", call)
-    }, {
       action: "dismiss",
       label: "Dismiss",
       default: false,
@@ -376,8 +459,41 @@ async function showIncomingCall(contact, call = {}) {
   });
 
   await dialog.render({ force: true });
+  attachIncomingCallActions(dialog, call, contact);
 
   return dialog;
+}
+
+function attachIncomingCallActions(dialog, call, contact) {
+  const element = dialog.element;
+  if (!element) return;
+  const findActionElements = (action) => {
+    if (typeof element.querySelectorAll === "function") {
+      return Array.from(element.querySelectorAll(`[data-action='${action}']`));
+    }
+
+    const match = element.querySelector?.(`[data-action='${action}']`);
+
+    return match ? [match] : [];
+  };
+
+  findActionElements("answer-call").forEach((button) => button.addEventListener("click", async (event) => {
+    event.preventDefault();
+    sendCallStatus("answered", call);
+    await dialog.close?.();
+  }));
+  findActionElements("dismiss-call").forEach((button) => button.addEventListener("click", async (event) => {
+    event.preventDefault();
+    sendCallStatus("dismissed", call);
+    await dialog.close?.();
+  }));
+  element.querySelector("[data-action='change-ringtone']")?.addEventListener("change", async (event) => {
+    const selectedRingtone = getRingtone(event.currentTarget.value);
+
+    await game.settings.set(MODULE_ID, PREFERRED_RINGTONE_SETTING, selectedRingtone);
+    await playRingtoneSource(selectedRingtone, contact?.volume);
+    globalThis.ui?.notifications?.info?.("Commlink ringtone updated.");
+  });
 }
 
 class WelcomeScreen extends HandlebarsApplicationMixin(ApplicationV2) {
@@ -495,18 +611,28 @@ class ContactManager extends HandlebarsApplicationMixin(ApplicationV2) {
     super(options);
 
     this._editingContactId = null;
+    this._targetUserIds = null;
   }
 
   async _prepareContext() {
     const contacts = getContacts();
     const editorContact = this._getEditorContact(contacts);
+    const isCreating = this._editingContactId === NEW_CONTACT_ID;
+    const targetUserIds = this._targetUserIds || getSelectedTargetIds();
+    this._targetUserIds = targetUserIds;
+    const callTargets = getCallTargetOptions(targetUserIds);
+    const playerTargets = callTargets.filter((target) => !target.isSelf);
+    const allPlayerTargetsSelected = Boolean(playerTargets.length) && playerTargets.every((target) => target.selected);
 
     return {
-      contacts,
+      contacts: contacts.map((contact) => Object.assign({}, contact, {
+        isEditing: contact.id === this._editingContactId
+      })),
+      callTargets,
+      allPlayerTargetsSelected,
       editorContact,
-      isEditing: Boolean(editorContact),
-      callTargets: getCallTargets(),
-      ringtonePresets: getRingtonePresetOptions(editorContact?.ringtone || "")
+      isCreating,
+      isEditing: Boolean(editorContact)
     };
   }
 
@@ -535,8 +661,11 @@ class ContactManager extends HandlebarsApplicationMixin(ApplicationV2) {
     element.querySelectorAll("[data-action='browse-file']").forEach((button) => {
       button.addEventListener("click", this._browseFile.bind(this));
     });
-    element.querySelectorAll("[data-action='apply-ringtone-preset']").forEach((select) => {
-      select.addEventListener("change", this._applyRingtonePreset.bind(this));
+    element.querySelectorAll("[data-action='toggle-target']").forEach((button) => {
+      button.addEventListener("click", this._toggleCallTarget.bind(this));
+    });
+    element.querySelectorAll("[data-action='toggle-all-targets']").forEach((button) => {
+      button.addEventListener("click", this._toggleAllTargets.bind(this));
     });
   }
 
@@ -577,12 +706,44 @@ class ContactManager extends HandlebarsApplicationMixin(ApplicationV2) {
     event?.preventDefault();
 
     const contactId = event?.currentTarget?.dataset?.contactId;
-    const targetUserId = this.element
-      ?.querySelector(`[data-contact-target="${contactId}"]`)
-      ?.value || ALL_PLAYERS_TARGET;
+    const targetUserIds = normalizeManagerTargetIds(this._targetUserIds || getSelectedTargetIds());
     if (!contactId || typeof globalThis.CommlinkCaller.placeCall !== "function") return;
+    if (!targetUserIds.length) {
+      globalThis.ui?.notifications?.warn?.("Select at least one commlink recipient.");
+      return;
+    }
 
-    await globalThis.CommlinkCaller.placeCall(contactId, { targetUserId });
+    await globalThis.CommlinkCaller.placeCall(contactId, { targetUserIds });
+  }
+
+  async _toggleCallTarget(event) {
+    event?.preventDefault();
+
+    const targetId = getContactId(event?.currentTarget?.dataset?.targetId);
+    if (!targetId) return;
+
+    const selectedIds = normalizeManagerTargetIds(this._targetUserIds || getSelectedTargetIds());
+    const nextTargetIds = selectedIds.includes(targetId)
+      ? selectedIds.filter((id) => id !== targetId)
+      : selectedIds.concat(targetId);
+
+    this._targetUserIds = await setCallTargetSelection(nextTargetIds);
+    this.render({ force: true });
+  }
+
+  async _toggleAllTargets(event) {
+    event?.preventDefault();
+
+    const playerTargetIds = getSelectablePlayerTargets().map((target) => target.id);
+    const selectedIds = normalizeManagerTargetIds(this._targetUserIds || getSelectedTargetIds());
+    const selectedPlayerIds = selectedIds.filter((id) => playerTargetIds.includes(id));
+    const selfTargetIds = selectedIds.filter((id) => !playerTargetIds.includes(id));
+    const nextTargetIds = playerTargetIds.length && selectedPlayerIds.length === playerTargetIds.length
+      ? selfTargetIds
+      : Array.from(new Set(selfTargetIds.concat(playerTargetIds)));
+
+    this._targetUserIds = await setCallTargetSelection(nextTargetIds);
+    this.render({ force: true });
   }
 
   _cancelEdit(event) {
@@ -601,16 +762,6 @@ class ContactManager extends HandlebarsApplicationMixin(ApplicationV2) {
     foundry.applications.apps.FilePicker.fromButton(button).render({ force: true });
   }
 
-  _applyRingtonePreset(event) {
-    const select = event?.currentTarget;
-    const form = select?.closest?.("[data-contact-form]");
-    const ringtoneInput = form?.querySelector?.("[name='ringtone']");
-
-    if (!ringtoneInput) return;
-
-    ringtoneInput.value = select?.value || "";
-  }
-
   async _saveContact(event) {
     event?.preventDefault();
 
@@ -622,7 +773,6 @@ class ContactManager extends HandlebarsApplicationMixin(ApplicationV2) {
       name: getFormString(formData, "name"),
       handle: getFormString(formData, "handle"),
       portrait: getFormString(formData, "portrait"),
-      ringtone: getFormString(formData, "ringtone"),
       message: getFormString(formData, "message"),
       volume: getFormString(formData, "volume")
     };
@@ -674,6 +824,15 @@ Hooks.once("init", () => {
     default: []
   });
 
+  game.settings.register(MODULE_ID, CONTACT_TARGET_SELECTIONS_SETTING, {
+    name: "Commlink call targets",
+    hint: "Stored selected call recipients for the Commlink contacts window.",
+    scope: "world",
+    config: false,
+    type: Object,
+    default: {}
+  });
+
   game.settings.register(MODULE_ID, SHOW_WELCOME_SETTING, {
     name: "Show welcome screen",
     hint: "Show the Commlink Caller welcome tutorial for this user. GMs only; players never receive the welcome screen.",
@@ -697,12 +856,12 @@ Hooks.once("init", () => {
 
   game.settings.register(MODULE_ID, PREFERRED_RINGTONE_SETTING, {
     name: "Preferred ringtone",
-    hint: "Override caller ringtones for calls you receive, or use the caller's configured ringtone.",
+    hint: "Choose the ringtone that plays when your commlink receives a call.",
     scope: "user",
     config: true,
     type: String,
     choices: getRingtoneSettingChoices(),
-    default: ""
+    default: getDefaultRingtone()
   });
 
   game.settings.register(MODULE_ID, PREFERRED_PHONE_FRAME_SETTING, {

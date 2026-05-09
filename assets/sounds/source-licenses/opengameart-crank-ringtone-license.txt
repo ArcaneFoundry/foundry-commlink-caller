@@ -1,0 +1,9 @@
+Crank movie telephone ringtone
+Author: cyberdyne
+Source: https://opengameart.org/content/crank-movie-telephone-ringtone
+Original file: crank_ringtone.mp3
+License: CC0
+
+Bundled derivative:
+The source was incorporated into the normalized `assets/sounds/ringtones/ringtone-*.ogg`
+library. The bundled derivative was trimmed and faded for table use.
