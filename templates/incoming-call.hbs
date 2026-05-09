@@ -8,16 +8,15 @@
         <i class="fas fa-satellite-dish" aria-hidden="true"></i>
       {{/if}}
     </div>
+    <div class="commlink-caller-phone__caller">
+      <p class="commlink-caller-phone__eyebrow">Incoming call</p>
+      <p class="commlink-caller-phone__target">For {{targetName}}</p>
+      <h2>{{contact.name}}</h2>
+      {{#if contact.handle}}
+        <p class="commlink-caller-phone__handle">{{contact.handle}}</p>
+      {{/if}}
+      <p class="commlink-caller-phone__message">{{contact.message}}</p>
+    </div>
     <div class="commlink-caller-phone__button" aria-hidden="true"></div>
-  </div>
-
-  <div class="commlink-caller-incoming__body">
-    <p class="commlink-caller-incoming__eyebrow">Incoming commlink call</p>
-    <p class="commlink-caller-incoming__target">For {{targetName}}</p>
-    <h2 class="commlink-caller-incoming__name">{{contact.name}}</h2>
-    {{#if contact.handle}}
-      <p class="commlink-caller-incoming__handle">{{contact.handle}}</p>
-    {{/if}}
-    <p class="commlink-caller-incoming__message">{{contact.message}}</p>
   </div>
 </section>

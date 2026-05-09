@@ -161,6 +161,11 @@ test("module bootstrap registers settings and GM menu during init", async () => 
   assert.equal(globalThis.CommlinkCaller.RINGTONE_PRESETS.length, 7);
   assert.equal(globalThis.CommlinkCaller.PHONE_FRAME_OPTIONS.length, 4);
   assert.equal(globalThis.CommlinkCaller.ContactManager.DEFAULT_OPTIONS.id, "commlink-caller-contact-manager");
+  assert.equal(globalThis.CommlinkCaller.ContactManager.DEFAULT_OPTIONS.window.title, "Commlink");
+  assert.deepEqual(globalThis.CommlinkCaller.ContactManager.DEFAULT_OPTIONS.position, {
+    width: 620,
+    height: 640
+  });
   assert.deepEqual(globalThis.CommlinkCaller.ContactManager.PARTS, {
     manager: {
       template: "modules/foundry-commlink-caller/templates/contact-manager.hbs"
@@ -476,14 +481,21 @@ test("contact manager template keeps ids internal and exposes FilePicker buttons
   assert.equal(template.includes("data-action=\"apply-ringtone-preset\""), true);
   assert.equal(template.includes("data-action=\"browse-file\" data-target=\"portrait\" data-type=\"image\""), true);
   assert.equal(template.includes("data-action=\"browse-file\" data-target=\"ringtone\" data-type=\"audio\""), true);
+  assert.equal(template.includes("Select a contact or create a new one."), false);
 });
 
 test("incoming call template renders a two-layer phone frame", async () => {
   const template = await readFile(new URL("../templates/incoming-call.hbs", import.meta.url), "utf8");
+  const css = await readFile(new URL("../styles/module.css", import.meta.url), "utf8");
 
   assert.equal(template.includes("commlink-caller-phone {{frameClass}}"), true);
   assert.equal(template.includes("commlink-caller-phone__screen"), true);
+  assert.equal(template.includes("commlink-caller-phone__caller"), true);
   assert.equal(template.includes("For {{targetName}}"), true);
+  assert.equal(template.includes("commlink-caller-incoming__body"), false);
+  assert.equal(css.includes(".commlink-caller-incoming-dialog .window-header .window-title"), true);
+  assert.equal(css.includes(".commlink-caller-incoming-dialog .dialog-buttons"), true);
+  assert.equal(css.includes("max-height: 27rem"), true);
 });
 
 test("bundled ringtone presets cover common genres and point to shipped audio", async () => {
@@ -1015,7 +1027,15 @@ test("receiveSocketMessage targets recipients and renders themed incoming calls"
       frameClass: "commlink-caller-phone--retro"
     }
   ]]);
-  assert.equal(dialogs[0].options.window.title, "Incoming Commlink Call");
+  assert.deepEqual(dialogs[0].options.classes, ["commlink-caller-incoming-dialog"]);
+  assert.deepEqual(dialogs[0].options.window, {
+    title: "",
+    resizable: false
+  });
+  assert.deepEqual(dialogs[0].options.position, {
+    width: 360,
+    height: 560
+  });
   assert.equal(dialogs[0].options.content, "<section class=\"commlink-caller-incoming\">Incoming</section>");
   assert.equal(dialogs[0].options.buttons.length, 2);
   assert.equal(dialogs[0].options.buttons[0].action, "answer");

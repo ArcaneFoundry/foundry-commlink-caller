@@ -352,8 +352,14 @@ async function showIncomingCall(contact, call = {}) {
     frameClass: `commlink-caller-phone--${frame}`
   });
   const dialog = new globalThis.CommlinkCaller.DialogV2({
+    classes: ["commlink-caller-incoming-dialog"],
     window: {
-      title: "Incoming Commlink Call"
+      title: "",
+      resizable: false
+    },
+    position: {
+      width: 360,
+      height: 560
     },
     content,
     buttons: [{
@@ -470,11 +476,12 @@ class ContactManager extends HandlebarsApplicationMixin(ApplicationV2) {
     id: "commlink-caller-contact-manager",
     classes: ["commlink-caller-contact-manager"],
     window: {
-      title: "Commlink contacts",
+      title: "Commlink",
       resizable: true
     },
     position: {
-      width: 720
+      width: 620,
+      height: 640
     }
   };
 

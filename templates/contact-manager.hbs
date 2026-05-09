@@ -51,8 +51,8 @@
       {{/each}}
     </ol>
 
-    <section class="commlink-caller-editor">
-      {{#if isEditing}}
+    {{#if isEditing}}
+      <section class="commlink-caller-editor">
         <form data-contact-form>
           <label>
             <span>Name</span>
@@ -108,9 +108,7 @@
             <button type="button" data-action="cancel">Cancel</button>
           </footer>
         </form>
-      {{else}}
-        <p class="commlink-caller-editor__empty">Select a contact or create a new one.</p>
-      {{/if}}
-    </section>
+      </section>
+    {{/if}}
   </div>
 </section>
