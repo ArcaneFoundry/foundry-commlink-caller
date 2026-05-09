@@ -88,6 +88,63 @@ function getContactId(value) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function getDragDropImplementation() {
+  const DragDrop = foundry.applications.ux?.DragDrop || globalThis.DragDrop;
+
+  return DragDrop?.implementation || DragDrop || null;
+}
+
+function getTextEditorImplementation() {
+  const TextEditor = foundry.applications.ux?.TextEditor || globalThis.TextEditor;
+
+  return TextEditor?.implementation || TextEditor || null;
+}
+
+function getDragEventData(event) {
+  const TextEditor = getTextEditorImplementation();
+  const eventData = typeof TextEditor?.getDragEventData === "function"
+    ? TextEditor.getDragEventData(event)
+    : null;
+
+  if (eventData && typeof eventData === "object" && Object.keys(eventData).length) return eventData;
+
+  const transfer = event?.dataTransfer;
+  const rawData = transfer?.getData?.("text/plain") || transfer?.getData?.("application/json") || "";
+  if (!rawData) return {};
+
+  try {
+    return JSON.parse(rawData);
+  } catch (_error) {
+    return {};
+  }
+}
+
+function isActorDropData(data) {
+  const documentName = getContactId(data?.documentName || data?.type);
+
+  return documentName === "Actor";
+}
+
+async function resolveDroppedActor(data) {
+  if (!isActorDropData(data)) return null;
+  if (data.uuid && typeof globalThis.fromUuid === "function") return globalThis.fromUuid(data.uuid);
+  if (data.id && typeof game.actors?.get === "function") return game.actors.get(data.id);
+
+  return null;
+}
+
+function isActorDocument(actor) {
+  if (!actor || typeof actor !== "object" || !getContactId(actor.name)) return false;
+
+  const documentName = getContactId(actor.documentName || actor.constructor?.documentName);
+
+  return !documentName || documentName === "Actor";
+}
+
+function getActorPortrait(actor) {
+  return getContactId(actor?.img) || getContactId(actor?.prototypeToken?.texture?.src);
+}
+
 function createEmptyContact() {
   return {
     id: "",
@@ -642,6 +699,8 @@ class ContactManager extends HandlebarsApplicationMixin(ApplicationV2) {
     const element = this.element;
     if (!element) return;
 
+    this._activateActorDrop(element);
+
     element.querySelector("[data-contact-form]")?.addEventListener("submit", this._saveContact.bind(this));
     element.querySelectorAll("[data-action='new']").forEach((button) => {
       button.addEventListener("click", this._newContact.bind(this));
@@ -667,6 +726,68 @@ class ContactManager extends HandlebarsApplicationMixin(ApplicationV2) {
     element.querySelectorAll("[data-action='toggle-all-targets']").forEach((button) => {
       button.addEventListener("click", this._toggleAllTargets.bind(this));
     });
+  }
+
+  _activateActorDrop(element) {
+    const DragDrop = getDragDropImplementation();
+    if (typeof DragDrop !== "function") return;
+
+    const dragDrop = new DragDrop({
+      dropSelector: "[data-contact-drop-zone]",
+      permissions: {
+        drop: () => Boolean(game.user?.isGM)
+      },
+      callbacks: {
+        dragenter: this._setDropActive.bind(this),
+        dragover: this._setDropActive.bind(this),
+        dragleave: this._clearDropActive.bind(this),
+        dragend: this._clearDropActive.bind(this),
+        drop: this._onDropActor.bind(this)
+      }
+    });
+
+    dragDrop.bind(element);
+  }
+
+  _setDropActive() {
+    this.element?.querySelector(".commlink-caller-manager")?.classList.add("is-drop-active");
+  }
+
+  _clearDropActive() {
+    this.element?.querySelector(".commlink-caller-manager")?.classList.remove("is-drop-active");
+  }
+
+  async _onDropActor(event) {
+    event?.preventDefault?.();
+    this._clearDropActive();
+
+    if (!game.user?.isGM) return;
+
+    const eventData = getDragEventData(event);
+    if (!isActorDropData(eventData)) {
+      globalThis.ui?.notifications?.warn?.("Drop an Actor to create a commlink contact.");
+      return;
+    }
+
+    const actor = await resolveDroppedActor(eventData);
+    if (!isActorDocument(actor)) {
+      globalThis.ui?.notifications?.warn?.("That Actor could not be loaded.");
+      return;
+    }
+
+    const contact = getContactModel().createContact({
+      name: actor.name,
+      portrait: getActorPortrait(actor)
+    });
+    if (!contact) {
+      globalThis.ui?.notifications?.warn?.("Actor name is required to create a commlink contact.");
+      return;
+    }
+
+    await setContacts(getContacts().concat(contact));
+
+    this._editingContactId = contact.id;
+    this.render({ force: true });
   }
 
   _getEditorContact(contacts) {
